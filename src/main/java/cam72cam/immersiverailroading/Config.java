@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @File("immersiverailroading.cfg")
 public class Config {
 	public static void init() {
-		if (ConfigBalance.dieselFuels.size() == 0) {
+		if (ConfigBalance.dieselFuels.isEmpty()) {
 			// BC
 			ConfigBalance.dieselFuels.put("oil", 100);
 			ConfigBalance.dieselFuels.put("oil_heavy", 70);
@@ -59,6 +59,11 @@ public class Config {
 
 		@Comment("Trains should break block")
 		public static boolean TrainsBreakBlocks = true;
+
+		@Comment("Which block is reserved if TrainsBreakBlocks is true")
+		public static String[] TrainsIgnoreBlocks = new String[]{
+				"littletiles:blocklittletiles"
+		};
 
 		@Comment("How hard are blocks to break by rolling stock?")
 		@Range(min = 0, max = 500)
@@ -186,7 +191,7 @@ public class Config {
 		public static boolean canDieselEnginesOverheat = true;
 
         public static List<ItemStack> getVillagerPayout() {
-			return Arrays.stream(villagerPayoutItems).map(f -> f.example()).collect(Collectors.toList());
+			return Arrays.stream(villagerPayoutItems).map(Fuzzy::example).collect(Collectors.toList());
 		}
 		
 		@Comment("Only select Locomotives with suitable equipment can be radio-controlled")
@@ -214,6 +219,10 @@ public class Config {
 		@Comment("Angles per tick to rotate turntables (used server side)")
 		@Range(min = 0, max = 5)
 		public static double TurnTableSpeed = 0.4;
+
+		@Comment("Meters per tick to move transfer tables (used server side)")
+		@Range(min = 0, max = 1)
+		public static double TransferTableSpeed = 0.03;
 
 		@Comment("Diesel locomotive capacity multiplier, set to 10 for old functionality")
 		@Range(min = 1, max = 10)
@@ -252,6 +261,9 @@ public class Config {
 
 		@Comment("Keep rolling stock loaded even when it is not moving")
 		public static boolean keepStockLoaded = true;
+
+		@Comment("Exclude unattached wagons from chunk loading when keepStockLoaded is true")
+		public static boolean excludeStandaloneWagons = false;
 
 		@Comment( "Print extra chunk loading info" )
 		public static boolean debugLog = false;
