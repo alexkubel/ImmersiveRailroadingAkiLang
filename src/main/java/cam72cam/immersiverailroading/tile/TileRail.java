@@ -292,6 +292,14 @@ public class TileRail extends TileRailBase {
 	}
 
 	@Override
+	public boolean isElectricPowered() {
+		if (info == null) {
+			return false;
+		}
+		return DefinitionManager.getTrack(info.settings.track).isPowered;
+	}
+
+	@Override
 	public ItemStack getRenderRailBed() {
 		if (info == null) {
 			return null;

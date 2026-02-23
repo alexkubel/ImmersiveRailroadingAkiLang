@@ -24,6 +24,7 @@ public class TrackDefinition {
     public final Map<TrackComponent, List<TrackMaterial>> materials = new HashMap<>();
     public final float bumpiness;
     public final boolean cog;
+    public final boolean isPowered;
     public final double model_gauge_m;
 
     TrackDefinition(String trackID, DataBlock object) throws Exception {
@@ -35,6 +36,7 @@ public class TrackDefinition {
         this.clack = object.getValue("clack").asBoolean(true);
         this.bumpiness = object.getValue("bumpiness").asFloat(clack ? 1f : 0f);
         this.cog = object.getValue("cog").asBoolean(false);
+        this.isPowered = object.getValue("can_provide_power").asBoolean(false);
         this.model_gauge_m = object.getValue("model_gauge_m").asDouble(Gauges.STANDARD);
         double spacing = object.getValue("model_spacing_m").asDouble( model_gauge_m / Gauges.STANDARD);
 

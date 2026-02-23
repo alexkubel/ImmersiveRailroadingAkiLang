@@ -1117,6 +1117,10 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 		return getParentTile() != null ? getParentTile().isCog() : false;
 	}
 
+	public boolean isElectricPowered() {
+		return getParentTile() != null ? getParentTile().isElectricPowered() : false;
+	}
+
 	public int getTicksExisted() {
 		return ticksExisted;
 	}
