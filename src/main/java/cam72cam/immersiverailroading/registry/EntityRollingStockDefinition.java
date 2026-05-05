@@ -3,20 +3,22 @@ package cam72cam.immersiverailroading.registry;
 import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.ConfigSound;
 import cam72cam.immersiverailroading.ImmersiveRailroading;
-import cam72cam.immersiverailroading.entity.EntityBuildableRollingStock;
+import cam72cam.immersiverailroading.entity.*;
 import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock.CouplerType;
-import cam72cam.immersiverailroading.entity.EntityMoveableRollingStock;
-import cam72cam.immersiverailroading.entity.EntityRollingStock;
+import cam72cam.immersiverailroading.floor.NavMesh;
+import cam72cam.immersiverailroading.font.FontLoader;
+import cam72cam.immersiverailroading.textfield.TextFieldConfig;
+import cam72cam.immersiverailroading.textfield.library.RGBA;
 import cam72cam.immersiverailroading.util.*;
 import cam72cam.immersiverailroading.gui.overlay.GuiBuilder;
 import cam72cam.immersiverailroading.gui.overlay.Readouts;
 import cam72cam.immersiverailroading.library.*;
 import cam72cam.immersiverailroading.model.StockModel;
 import cam72cam.immersiverailroading.model.components.ModelComponent;
+import cam72cam.mod.ModCore;
 import cam72cam.mod.entity.EntityRegistry;
 import cam72cam.mod.math.Vec3d;
-import cam72cam.mod.model.obj.OBJGroup;
-import cam72cam.mod.model.obj.VertexBuffer;
+import cam72cam.mod.model.obj.FaceAccessor;
 import cam72cam.mod.resource.Identifier;
 import cam72cam.mod.serialization.*;
 import cam72cam.mod.serialization.ResourceCache.GenericByteBuffer;
@@ -29,8 +31,7 @@ import cam72cam.mod.world.World;
 
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -45,6 +46,7 @@ public abstract class EntityRollingStockDefinition {
     private final Class<? extends EntityRollingStock> type;
 
     public final List<String> itemGroups;
+    public List<String> addScripts;
     public Map<String, String> textureNames;
     public float dampeningAmount;
     public Gauge recommended_gauge;
@@ -67,7 +69,8 @@ public abstract class EntityRollingStockDefinition {
     public float darken;
     public Identifier modelLoc;
     protected StockModel<?, ?> model;
-    private Vec3d passengerCenter;
+    public Identifier script;
+    public Vec3d passengerCenter;
     private float bogeyFront;
     private float bogeyRear;
     private float couplerOffsetFront;
@@ -79,15 +82,18 @@ public abstract class EntityRollingStockDefinition {
     private double rearBounds;
     private double heightBounds;
     private double widthBounds;
-    private double passengerCompartmentLength;
-    private double passengerCompartmentWidth;
+    public Double passengerCompartmentLength;
+    public Double passengerCompartmentWidth;
     private double weight;
     private int maxPassengers;
     private int snowLayers;
     private float interiorLightLevel;
     private boolean hasIndependentBrake;
+    private boolean hasHandBrake;
     private boolean hasPressureBrake;
-    private final Map<ModelComponentType, List<ModelComponent>> renderComponents;
+    private boolean hasEpBrake;
+    private boolean hasSingleReleaseBrake;
+    private final EnumMap<ModelComponentType, List<ModelComponent>> renderComponents;
     private final List<ItemComponentType> itemComponents;
     private final Function<EntityBuildableRollingStock, float[][]> heightmap;
     private final Map<String, LightDefinition> lights = new HashMap<>();
@@ -100,12 +106,30 @@ public abstract class EntityRollingStockDefinition {
     private double swayMultiplier;
     private double tiltMultiplier;
     private float brakeCoefficient;
+    private PhysicalMaterials brakeMaterials;
+    private float handBrakeCoefficient;
     public double rollingResistanceCoefficient;
     public double directFrictionCoefficient;
+    private int magneticTrackBrake;
+    private int speedBrakeSqueal;
+    private float rigidWheelbase;
+    
+    public SoundDefinition brakeHighSpeedSound;
+    public SoundDefinition brakeLowSpeedSound;
+    public SoundDefinition brakeShoeSound;
+    public SoundDefinition brakePressureSound;
 
     public List<AnimationDefinition> animations;
     public Map<String, Float> cgDefaults;
     public Map<String, DataBlock> widgetConfig;
+
+    public NavMesh navMesh;
+
+    public List<Identifier> loadedFonts = new ArrayList<>();
+    public final Map<String, TextFieldConfig> textFields;
+
+    // used for unique text fields to check if text field input is already assigned
+    public Map<UUID, Map<String, String>> inputs = new HashMap<>();
 
     public static class SoundDefinition {
         public final Identifier start;
@@ -316,7 +340,9 @@ public abstract class EntityRollingStockDefinition {
         this.model = createModel();
         this.itemGroups = model.groups.keySet().stream().filter(x -> !ModelComponentType.shouldRender(x)).collect(Collectors.toList());
 
-        this.renderComponents = new HashMap<>();
+        this.navMesh = new NavMesh(this);
+
+        this.renderComponents = new EnumMap<>(ModelComponentType.class);
         for (ModelComponent component : model.allComponents) {
             renderComponents.computeIfAbsent(component.type, v -> new ArrayList<>())
                     .add(0, component);
@@ -357,6 +383,8 @@ public abstract class EntityRollingStockDefinition {
         heightBounds = model.heightOfGroups(heightGroups);
 
         this.heightmap = initHeightmap();
+
+        textFields = parseTextFields(transformData(data).getBlocks("text_fields"));
     }
 
     public final EntityRollingStock spawn(World world, Vec3d pos, float yaw, Gauge gauge, String texture) {
@@ -448,16 +476,26 @@ public abstract class EntityRollingStockDefinition {
             for (DataBlock alternate : alternates) {
                 alternate.getValueMap().forEach((key, value) -> textureNames.put(value.asString(), key));
             }
-        } catch (java.io.FileNotFoundException ex) {
+        } catch (FileNotFoundException ex) {
             ImmersiveRailroading.catching(ex);
         }
 
         modelLoc = data.getValue("model").asIdentifier();
 
         DataBlock passenger = data.getBlock("passenger");
-        passengerCenter = new Vec3d(0, passenger.getValue("center_y").asDouble() - 0.35, passenger.getValue("center_x").asDouble()).scale(internal_model_scale);
-        passengerCompartmentLength = passenger.getValue("length").asDouble() * internal_model_scale;
-        passengerCompartmentWidth = passenger.getValue("width").asDouble() * internal_model_scale;
+
+        if (passenger.getValue("center_x") != null && passenger.getValue("center_y") != null) {
+            passengerCenter = new Vec3d(-passenger.getValue("center_x").asDouble(), passenger.getValue("center_y").asDouble() - 0.35, 0).scale(internal_model_scale);
+        }
+
+        if (passenger.getValue("length") != null) {
+            passengerCompartmentLength = passenger.getValue("length").asDouble() * internal_model_scale;
+        }
+
+        if (passenger.getValue("width") != null) {
+            passengerCompartmentWidth = passenger.getValue("width").asDouble() * internal_model_scale;
+        }
+
         maxPassengers = passenger.getValue("slots").asInteger();
         shouldSit = passenger.getValue("should_sit").asBoolean();
 
@@ -468,9 +506,9 @@ public abstract class EntityRollingStockDefinition {
         bogeyFront = pivot.getValue("front").asFloat() * (float) internal_model_scale;
         bogeyRear = pivot.getValue("rear").asFloat() * (float) internal_model_scale;
 
-        dampeningAmount = data.getValue("sound_dampening_percentage").asFloat();
+        dampeningAmount = 1 - data.getValue("sound_dampening_percentage").asFloat();
         if (dampeningAmount < 0 || dampeningAmount > 1) {
-            dampeningAmount = 0.75f;
+            dampeningAmount = 0.5f;
         }
         scalePitch = data.getValue("scale_pitch").asBoolean();
 
@@ -484,21 +522,39 @@ public abstract class EntityRollingStockDefinition {
         weight = properties.getValue("weight_kg").asInteger() * internal_inv_scale;
         valveGear = ValveGearConfig.get(properties, "valve_gear");
         hasIndependentBrake = properties.getValue("independent_brake").asBoolean();
+        hasHandBrake = properties.getValue("hand_brake").asBoolean(true);
         hasPressureBrake = properties.getValue("pressure_brake").asBoolean();
+        hasEpBrake = properties.getValue("ep_brake").asBoolean(false);
+        hasSingleReleaseBrake = properties.getValue("single_release_brake").asBoolean(false);
+        magneticTrackBrake = properties.getValue("magnetic_brake_newton").asInteger(0);
         // Locomotives default to linear brake control
         isLinearBrakeControl = properties.getValue("linear_brake_control").asBoolean();
+        speedBrakeSqueal = properties.getValue("speed_brake_squeal").asInteger(45);
+        rigidWheelbase = properties.getValue("rigid_wheelbase").asFloat(2.5f);
 
-        brakeCoefficient = PhysicalMaterials.STEEL.kineticFriction(PhysicalMaterials.CAST_IRON);
+        script = data.getValue("script").asIdentifier();
+
+        List<DataBlock.Value> fonts = data.getValues("fonts");
+        if (fonts != null) {
+            for (int i = 0; i < fonts.size(); i++) {
+                DataBlock.Value val = fonts.get(i);
+                Identifier font = new Identifier(val.asString());
+                FontLoader.getOrCreateFont(font);
+                loadedFonts.add(i, font);
+            }
+        }
+
         try {
-            brakeCoefficient = PhysicalMaterials.STEEL.kineticFriction(PhysicalMaterials.valueOf(properties.getValue("brake_shoe_material").asString()));
+            brakeMaterials = PhysicalMaterials.valueOf(properties.getValue("brake_shoe_material").asString(PhysicalMaterials.CAST_IRON.toString()));
         } catch (Exception ex) {
             ImmersiveRailroading.warn("Invalid brake_shoe_material, possible values are: %s", Arrays.toString(PhysicalMaterials.values()));
         }
+        brakeCoefficient = PhysicalMaterials.STEEL.kineticFriction(brakeMaterials);
         brakeCoefficient = properties.getValue("brake_friction_coefficient").asFloat(brakeCoefficient);
         // https://en.wikipedia.org/wiki/Rolling_resistance#Rolling_resistance_coefficient_examples
         rollingResistanceCoefficient = properties.getValue("rolling_resistance_coefficient").asDouble();
         directFrictionCoefficient = properties.getValue("direct_friction_coefficient").asDouble();
-
+        handBrakeCoefficient = properties.getValue("handbrake_coefficient").asFloat(1);
         swayMultiplier = properties.getValue("swayMultiplier").asDouble();
         tiltMultiplier = properties.getValue("tiltMultiplier").asDouble();
 
@@ -509,6 +565,11 @@ public abstract class EntityRollingStockDefinition {
             lights.getBlockMap().forEach((key, block) -> this.lights.put(key, new LightDefinition(block)));
         }
 
+        addScripts = new ArrayList<>();
+        List<DataBlock.Value> scripts = data.getValues("add_scripts");
+        if (scripts != null) {
+            scripts.forEach(value -> addScripts.add(value.asString()));
+        }
         snowLayers = properties.getValue("snow_layers").asInteger();
 
         DataBlock sounds = data.getBlock("sounds");
@@ -521,6 +582,11 @@ public abstract class EntityRollingStockDefinition {
         flange_sound = sounds.getValue("flange").asIdentifier();
         flange_min_yaw = sounds.getValue("flange_min_yaw").asDouble();
         collision_sound = sounds.getValue("collision").asIdentifier();
+        brakeHighSpeedSound = SoundDefinition.getOrDefault(sounds, "brake_noise_fast");
+        brakeLowSpeedSound = SoundDefinition.getOrDefault(sounds, "brake_noise_slow");
+        brakeShoeSound = SoundDefinition.getOrDefault(sounds, "brake_apply");
+        brakePressureSound = SoundDefinition.getOrDefault(sounds, "brake_pressure");
+        
         DataBlock soundControls = sounds.getBlock("controls");
         if (soundControls != null) {
             soundControls.getBlockMap().forEach((key, block) -> controlSounds.put(key, new ControlSoundsDefinition(block)));
@@ -580,37 +646,6 @@ public abstract class EntityRollingStockDefinition {
         return renderComponents.get(name);
     }
 
-    public Vec3d correctPassengerBounds(Gauge gauge, Vec3d pos, boolean shouldSit) {
-        double gs = gauge.scale();
-        Vec3d passengerCenter = this.passengerCenter.scale(gs);
-        pos = pos.subtract(passengerCenter);
-        if (pos.z > this.passengerCompartmentLength * gs) {
-            pos = new Vec3d(pos.x, pos.y, this.passengerCompartmentLength * gs);
-        }
-
-        if (pos.z < -this.passengerCompartmentLength * gs) {
-            pos = new Vec3d(pos.x, pos.y, -this.passengerCompartmentLength * gs);
-        }
-
-        if (Math.abs(pos.x) > this.passengerCompartmentWidth / 2 * gs) {
-            pos = new Vec3d(Math.copySign(this.passengerCompartmentWidth / 2 * gs, pos.x), pos.y, pos.z);
-        }
-
-        pos = new Vec3d(pos.x, passengerCenter.y - (shouldSit ? 0.75 : 0), pos.z + passengerCenter.z);
-
-        return pos;
-    }
-
-    public boolean isAtFront(Gauge gauge, Vec3d pos) {
-        pos = pos.subtract(passengerCenter.scale(gauge.scale()));
-        return pos.z >= this.passengerCompartmentLength * gauge.scale();
-    }
-
-    public boolean isAtRear(Gauge gauge, Vec3d pos) {
-        pos = pos.subtract(passengerCenter.scale(gauge.scale()));
-        return pos.z <= -this.passengerCompartmentLength * gauge.scale();
-    }
-
     public List<ItemComponentType> getItemComponents() {
         return itemComponents;
     }
@@ -646,13 +681,24 @@ public abstract class EntityRollingStockDefinition {
         }
     }
 
-
     public boolean hasIndependentBrake() {
         return hasIndependentBrake;
     }
 
+    public boolean hasHandBrake() {
+        return hasHandBrake;
+    }
+
     public boolean hasPressureBrake() {
         return hasPressureBrake;
+    }
+    
+    public boolean hasEpBrake() {
+        return hasEpBrake;
+    }
+    
+    public boolean hasSingleRealseBrake() {
+        return hasSingleReleaseBrake;
     }
 
     private static class HeightMapData {
@@ -675,33 +721,31 @@ public abstract class EntityRollingStockDefinition {
                     .collect(Collectors.toList());
             data = new float[components.size() * xRes * zRes];
 
-            VertexBuffer vb = def.model.vbo.buffer.get();
+            FaceAccessor visitor = def.model.getFaceAccessor();
 
             for (int i = 0; i < components.size(); i++) {
                 ModelComponent rc = components.get(i);
                 int idx = i * xRes * zRes;
                 for (String group : rc.modelIDs) {
-                    OBJGroup faces = def.model.groups.get(group);
+                    FaceAccessor grouped = visitor.getSubByGroup(group);
 
-                    for (int face = faces.faceStart; face <= faces.faceStop; face++) {
+                    for (FaceAccessor face : grouped) {
                         Path2D path = new Path2D.Float();
-                        float fheight = 0;
-                        boolean first = true;
-                        for (int point = 0; point < vb.vertsPerFace; point++) {
-                            int vertex = face * vb.vertsPerFace * vb.stride + point * vb.stride;
-                            float vertX = vb.data[vertex + 0];
-                            float vertY = vb.data[vertex + 1];
-                            float vertZ = vb.data[vertex + 2];
-                            vertX += def.frontBounds;
-                            vertZ += def.widthBounds / 2;
-                            if (first) {
-                                path.moveTo(vertX * ratio, vertZ * ratio);
-                                first = false;
-                            } else {
-                                path.lineTo(vertX * ratio, vertZ * ratio);
-                            }
-                            fheight += vertY / vb.vertsPerFace;
-                        }
+                        float faceHeight = 0;
+
+                        double v0x = (face.v0.x() + def.frontBounds) * ratio;
+                        double v0z = (face.v0.z() + def.widthBounds / 2) * ratio;
+                        double v1x = (face.v1.x() + def.frontBounds) * ratio;
+                        double v1z = (face.v1.z() + def.widthBounds / 2) * ratio;
+                        double v2x = (face.v2.x() + def.frontBounds) * ratio;
+                        double v2z = (face.v2.z() + def.widthBounds / 2) * ratio;
+
+                        path.moveTo(v0x, v0z);
+                        path.lineTo(v1x, v1z);
+                        path.lineTo(v2x, v2z);
+
+                        faceHeight = faceHeight + (face.v0.y() + face.v1.y() + face.v2.y()) / 3;
+
                         Rectangle2D bounds = path.getBounds2D();
                         if (bounds.getWidth() * bounds.getHeight() < 1) {
                             continue;
@@ -711,7 +755,7 @@ public abstract class EntityRollingStockDefinition {
                                 float relX = ((xRes - 1) - x);
                                 float relZ = z;
                                 if (bounds.contains(relX, relZ) && path.contains(relX, relZ)) {
-                                    float relHeight = fheight / (float) def.heightBounds;
+                                    float relHeight = faceHeight / (float) def.heightBounds;
                                     relHeight = ((int) Math.ceil(relHeight * precision)) / (float) precision;
                                     data[idx + x * zRes + z] = Math.max(data[idx + x * zRes + z], relHeight);
                                 }
@@ -828,11 +872,86 @@ public abstract class EntityRollingStockDefinition {
         return tips;
     }
 
+    public List<String> getModelerTooltip() {
+        List<String> tips = new ArrayList<>();
+        tips.add(GuiText.MODELER_TOOLTIP.toString(modelerName));
+        tips.add(GuiText.PACK_TOOLTIP.toString(packName));
+        return tips;
+    }
+
     protected StockModel<?, ?> createModel() throws Exception {
         return new StockModel<>(this);
     }
     public StockModel<?, ?> getModel() {
         return this.model;
+    }
+
+    private Map<String, TextFieldConfig> parseTextFields(List<DataBlock> textFields) {
+        if (textFields == null) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, TextFieldConfig> list = new HashMap<>();
+
+        for (DataBlock textField : textFields) {
+            String groupName = textField.getValue("name").asString();
+            groupName = String.format("TEXTFIELD_%s", groupName);
+
+            DataBlock resolution = textField.getBlock("resolution");
+
+            DataBlock config = textField.getBlock("config");
+
+
+            String finalGroupName = groupName;
+            TextFieldConfig current = new TextFieldConfig(
+                    groupName,
+                    Optional.ofNullable(resolution.getValue("x").asInteger()).orElseGet(() -> {
+                        ModCore.warn("Text field %s doesn't have an x-resolution defined. Using default", finalGroupName);
+                        return 128;
+                    }),
+                    Optional.ofNullable(resolution.getValue("y").asInteger()).orElseGet(() -> {
+                        ModCore.warn("Text field %s doesn't have an y-resolution defined. Using default", finalGroupName);
+                        return 7;
+                    }),
+                    defaults -> {
+                        if (config == null) {
+                            return;
+                        }
+
+                        Optional.ofNullable(config.getValue("text").asString()).ifPresent(defaults::setText);
+                        Optional.ofNullable(config.getValue("color").asString()).ifPresent(c -> defaults.setColor(RGBA.fromHex(c)));
+                        Optional.ofNullable(config.getValue("fullbright").asBoolean()).ifPresent(defaults::setFullbright);
+                        Optional.ofNullable(config.getValue("gap").asInteger()).ifPresent(defaults::setGap);
+                        Optional.ofNullable(config.getValue("align").asString()).ifPresent(a -> defaults.setAlign(TextFieldConfig.Align.valueOf(a.toUpperCase())));
+                        Optional.ofNullable(config.getValue("font").asIdentifier()).ifPresent(defaults::setFont);
+                        Optional.ofNullable(config.getValues("linked")).ifPresent(l -> defaults.setLinked(l.stream().map(v -> String.format("TEXTFIELD_%s", v.asString())).collect(Collectors.toList())));
+                        Optional.ofNullable(config.getValue("global").asBoolean()).ifPresent(defaults::setGlobal);
+                        Optional.ofNullable(config.getValue("selectable").asBoolean()).ifPresent(defaults::setSelectable);
+
+                        Set<String> fonts = Optional.ofNullable(config.getValues("availableFonts")).orElse(Collections.emptyList()).stream().map(DataBlock.Value::asString).collect(Collectors.toSet());
+                        if (!fonts.isEmpty()) {
+                            List<Identifier> availableFonts = loadedFonts.stream()
+                                    .filter(identifier -> fonts.stream().anyMatch(f -> identifier.getPath().contains(f)))
+                                    .collect(Collectors.toList());
+                            defaults.setAvailableFonts(availableFonts);
+                        }
+
+                        List<String> filter = Optional.ofNullable(config.getValues("filter")).orElse(Collections.emptyList()).stream().map(DataBlock.Value::asString).collect(Collectors.toList());
+                        if (!filter.isEmpty()) {
+                            defaults.setFilter(filter);
+                        }
+
+                        Optional.ofNullable(config.getValue("unique").asBoolean()).ifPresent(defaults::setUnique);
+                        Optional.ofNullable(config.getValue("numberPlate").asBoolean()).ifPresent(defaults::setNumberPlate);
+                        Optional.ofNullable(config.getValue("verticalAlign").asString()).ifPresent(v -> defaults.setVerticalAlign(TextFieldConfig.VerticalAlign.valueOf(v)));
+                        Optional.ofNullable(config.getValue("scale").asFloat()).ifPresent(defaults::setScale);
+                    }
+            );
+
+            list.put(groupName, current);
+        }
+
+        return list;
     }
 
     /**
@@ -896,9 +1015,9 @@ public abstract class EntityRollingStockDefinition {
     }
 
     protected GuiBuilder getDefaultOverlay(DataBlock data) throws IOException {
-        return hasIndependentBrake() ? GuiBuilder.parse(new Identifier(ImmersiveRailroading.MODID, "gui/default/independent.caml")) : null;
+        return hasIndependentBrake() || hasHandBrake() ? GuiBuilder.parse(new Identifier(ImmersiveRailroading.MODID, "gui/default/independent.caml")) : null;
     }
-
+    
     public GuiBuilder getOverlay() {
         return overlay;
     }
@@ -915,11 +1034,58 @@ public abstract class EntityRollingStockDefinition {
         return tiltMultiplier;
     }
 
-    public double getBrakeShoeFriction() {
+    public float getBrakeShoeFriction() {
         return brakeCoefficient;
+    }
+
+    public void setTraction(double val){
+    }
+
+    public void setHorsepower(double val) {
+    }
+
+    public void setMaxSpeed(double val) {
+    }
+
+    public double getMaxSpeed() {
+        return 0d;
+    }
+
+    public double getTraction() {
+        return 0d;
+    }
+
+    public double getHorsepower() {
+        return 0d;
+    }
+
+    public void setSounds(List<Map<String, DataBlock.Value>> newSound, EntityMoveableRollingStock stock) {
     }
     public int getSnowLayers() {
         return snowLayers;
     }
+    
+    public float getHandBrakeCoefficient() {
+        return handBrakeCoefficient;
+    }
 
+    public String getName() {
+        return name;
+    }
+    
+    public PhysicalMaterials getBrakeMaterials() {
+        return brakeMaterials;
+    }
+    
+    public int getMagnetBrakeNewton() {
+        return magneticTrackBrake;
+    }
+    
+    public int getSpeedBrakeSqueal() {
+        return speedBrakeSqueal;
+    }
+    
+    public float getRigidWheelbase() {
+        return rigidWheelbase;
+    }
 }
