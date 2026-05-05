@@ -22,6 +22,7 @@ public enum ModelComponentType {
 	BELL("BELL"),
 	WHISTLE("WHISTLE"),
 	HORN("HORN"),
+	COMPRESSOR("COMPRESSOR"),
 	
 	// DIESEL
 	FUEL_TANK("FUEL_TANK"),
@@ -80,6 +81,10 @@ public enum ModelComponentType {
 	PRESSURE_VALVE_X("PRESSURE_VALVE_#ID#", false),
 	DIESEL_EXHAUST_X("EXHAUST_#ID#", false),
 	CYLINDER_DRAIN_SIDE("(CYLINDER|DRAIN)_(COCK|EXHAUST)_#SIDE#", false),
+	CUSTOM_PARTICLE_X("CUSTOM_PARTICLE_#ID#", false),
+	SAND_PARTICLE_X("SAND_PARTICLE_#ID#", false),
+	FIRE_PARTICLE_X("FIRE_PARTICLE_#ID#", false),
+	STEAM_PARTICLE_X("STEAM_PARTICLE_#ID#",false),
 
 	// Cargo
 	CARGO_FILL_X("CARGO_FILL_#ID#", false),
@@ -93,8 +98,11 @@ public enum ModelComponentType {
 	THROTTLE_X("THROTTLE_#ID#"),
 	REVERSER_X("REVERSER_#ID#"),
 	TRAIN_BRAKE_X("TRAIN_BRAKE_#ID#"),
+	HAND_BRAKE_X("HAND_BRAKE_#ID#"),
+	DYNAMIC_BRAKE_X("(DYNAMIC|DYN)_BRAKE_#ID#"),
 	INDEPENDENT_BRAKE_X("(INDEPENDENT|IND)_BRAKE_#ID#"),
 	THROTTLE_BRAKE_X("THROTTLE_BRAKE_#ID#"),
+	THROTTLE_DYN_BRAKE_X("THROTTLE_DYN_BRAKE_#ID#"),
 	DOOR_X("DOOR_#ID#"),
 	SEAT_X("SEAT_#ID#"),
 	WINDOW_X("WINDOW_#ID#"),
@@ -105,6 +113,8 @@ public enum ModelComponentType {
 	ENGINE_START_X("ENGINE_START_#ID#"),
 	COUPLER_ENGAGED_X("COUPLER_ENGAGED_#ID#"),
 	CYLINDER_DRAIN_CONTROL_X("(CYLINDER|DRAIN)_(COCK|EXHAUST)_CONTROL_#ID#"),
+	SANDING_CONTROL_X("(SANDING|SAND)_CONTROL_#ID#"),
+	COMPRESSOR_CONTROL_X("COMPRESSOR_CONTROL_#ID#"),
 
 	// Gauges
 	GAUGE_LIQUID_X("GAUGE_LIQUID_#ID#"),
@@ -115,8 +125,22 @@ public enum ModelComponentType {
 	GAUGE_REVERSER_X("GAUGE_REVERSER_#ID#"),
 	GAUGE_TRAIN_BRAKE_X("GAUGE_TRAIN_BRAKE_#ID#"),
 	GAUGE_INDEPENDENT_BRAKE_X("GAUGE_(INDEPENDENT|IND)_BRAKE_#ID#"),
-	BRAKE_PRESSURE_X("BRAKE_PRESSURE_#ID#"),
+	GAUGE_BRAKE_PRESSURE_X("(GAUGE_BRAKE|BRAKE)_PRESSURE_#ID#"),
+	GAUGE_BRAKE_CYLINDER_PRESSURE_X("(GAUGE_BRAKE|BRAKE)_(CYLINDER|CYL)_PRESSURE_#ID#"),
 	COUPLED_X("COUPLED_#ID#"),
+	GAUGE_HAND_BRAKE_X("GAUGE_HAND_BRAKE_#ID#"),
+    GAUGE_DYNAMIC_BRAKE_X("GAUGE_DYNAMIC_BRAKE_#ID#"),
+    GAUGE_TRACTIVE_EFFORT_X("GAUGE_TRACTIVE_EFFORT_#ID#"),
+    GAUGE_MAIN_AIR_RESERVOIR_X("GAUGE_MAIN_AIR_#ID#"),
+    GAUGE_CHEST_PRESSURE_X("GAUGE_CHEST_PRESSURE_#ID#"),
+    GAUGE_MAGNETIC_BRAKE_X("GAUGE_MAGNETIC_BRAKE_#ID#"),
+    GAUGE_SANDING_X("GAUGE_SANDING_#ID#"),
+
+	TEXTFIELD_X("TEXTFIELD"),
+
+	// Floor
+	FLOOR("FLOOR"),
+	COLLISION("COLLISION"),
 
 	// REST
 	IMMERSIVERAILROADING_BASE_COMPONENT("IMMERSIVERAILROADING_BASE_COMPNOENT"),
@@ -135,9 +159,10 @@ public enum ModelComponentType {
 	}
 
 	public static boolean shouldRender(String group) {
-		return group.contains("CHIMNEY_") || group.contains("CHIMINEY_") || group.contains("PRESSURE_VALVE_") || group.contains("EXHAUST_") || group.contains("CARGO_ITEMS");
+		return group.contains("CHIMNEY_") || group.contains("CHIMINEY_") || group.contains("PRESSURE_VALVE_") || group.contains("EXHAUST_") || group.contains("CARGO_ITEMS") || group.contains("TEXTFIELD_");
 	}
 
+	//TODO add new parts
 	public String getOverlayName() {
 		//Get name and remove _X
 		String primary = this.name().substring(0, this.name().length() - 2);
@@ -151,10 +176,15 @@ public enum ModelComponentType {
 				//Fallthrough
 			case TRAIN_BRAKE_X:
 			case INDEPENDENT_BRAKE_X:
+			case HAND_BRAKE_X:
+			case DYNAMIC_BRAKE_X:
 			case THROTTLE_X:
 			case REVERSER_X:
 			case THROTTLE_BRAKE_X:
+			case THROTTLE_DYN_BRAKE_X:
 			case ENGINE_START_X:
+			case SANDING_CONTROL_X:
+			case COMPRESSOR_CONTROL_X:
 				return TextUtil.translate("part.immersiverailroading:controls." + primary.toLowerCase(Locale.ROOT));
             default:
 				//Unexpected behaviour

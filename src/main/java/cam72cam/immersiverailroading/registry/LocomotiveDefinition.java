@@ -5,6 +5,7 @@ import cam72cam.immersiverailroading.ImmersiveRailroading;
 import cam72cam.immersiverailroading.entity.EntityRollingStock;
 import cam72cam.immersiverailroading.library.unit.ForceDisplayType;
 import cam72cam.immersiverailroading.library.unit.PowerDisplayType;
+import cam72cam.immersiverailroading.entity.Locomotive;
 import cam72cam.immersiverailroading.util.DataBlock;
 import cam72cam.immersiverailroading.library.Gauge;
 import cam72cam.immersiverailroading.library.GuiText;
@@ -16,6 +17,7 @@ import cam72cam.mod.resource.Identifier;
 import java.util.List;
 
 public abstract class LocomotiveDefinition extends FreightDefinition {
+	
     public boolean toggleBell;
     public SoundDefinition bell;
     public String works;
@@ -28,11 +30,18 @@ public abstract class LocomotiveDefinition extends FreightDefinition {
     private boolean isLinkedBrakeThrottle;
     private boolean isCog;
     private double factorOfAdhesion;
+    private boolean speedLimiter;
+    protected double powerMultiplier;
+    private int brakeNotches;
+    private boolean hasBrakeNotches;
+    public SoundDefinition compressor;
+    private boolean hasCompressor;
 
     LocomotiveDefinition(Class<? extends EntityRollingStock> type, String defID, DataBlock data) throws Exception {
         super(type, defID, data);
+       
     }
-
+    
     @Override
     protected Identifier defaultDataLocation() {
         return new Identifier(ImmersiveRailroading.MODID, "rolling_stock/default/locomotive.caml");
@@ -47,7 +56,7 @@ public abstract class LocomotiveDefinition extends FreightDefinition {
         DataBlock properties = data.getBlock("properties");
 
         hasRadioEquipment = properties.getValue("radio_equipped").asBoolean(false);
-
+        
         isCabCar = readCabCarFlag(data);
         if (isCabCar) {
             power_kW = 0;
@@ -77,12 +86,20 @@ public abstract class LocomotiveDefinition extends FreightDefinition {
             }
 
             factorOfAdhesion = properties.getValue("factor_of_adhesion").asDouble(4);
-            maxSpeed = Speed.fromMetric(properties.getValue("max_speed_kmh").asDouble() * internal_inv_scale);
+            maxSpeed = Speed.fromMetric(Math.ceil(properties.getValue("max_speed_kmh").asDouble() * internal_inv_scale));
             muliUnitCapable = properties.getValue("multi_unit_capable").asBoolean();
         }
         isLinkedBrakeThrottle = properties.getValue("isLinkedBrakeThrottle").asBoolean();
         toggleBell = properties.getValue("toggle_bell").asBoolean();
         isCog = properties.getValue("cog").asBoolean();
+        speedLimiter = properties.getValue("speed_limiter").asBoolean(true);
+        brakeNotches = properties.getValue("brake_notches").asInteger(25);
+        hasBrakeNotches = properties.getValue("has_brake_notches").asBoolean(false);
+        hasCompressor = properties.getValue("has_compressor").asBoolean(true);
+        
+        DataBlock sounds = data.getBlock("sounds");
+        bell = SoundDefinition.getOrDefault(sounds, "bell");
+        compressor = SoundDefinition.getOrDefault(sounds, "compressor");
     }
 
     protected boolean readCabCarFlag(DataBlock data) {
@@ -116,8 +133,20 @@ public abstract class LocomotiveDefinition extends FreightDefinition {
         return (float) (gauge.scale() * this.power_kW * PowerDisplayType.kWToHp);
     }
 
+    public float getScriptedHorsePower(Gauge gauge, Locomotive stock) {
+        return stock.localHorsepower != -1
+                ? (float) (gauge.scale() * stock.localHorsepower * PowerDisplayType.kWToHp)
+                : getHorsePower(gauge);
+    }
+
     public float getWatt(Gauge gauge) {
         return (float) (gauge.scale() * this.power_kW * 1000);
+    }
+
+    public float getScriptedWatt(Gauge gauge, Locomotive stock) {
+        return stock.localWatt != -1
+                ? (float) (gauge.scale() * stock.localWatt * 100)
+                : getWatt(gauge);
     }
 
     /**
@@ -127,14 +156,27 @@ public abstract class LocomotiveDefinition extends FreightDefinition {
         return (float) (gauge.scale() * this.traction_N);
     }
 
-    public Speed getMaxSpeed(Gauge gauge) {
+    public float getScriptedStartingTractionNewtons(Gauge gauge, Locomotive stock) {
+        return stock.localTraction != -1
+                ? (float) (gauge.scale() * stock.localTraction)
+                : getStartingTractionNewtons(gauge);
+    }
+
+    public Speed getMaxSpeed(Gauge gauge){
         return Speed.fromMinecraft(gauge.scale() * this.maxSpeed.minecraft());
+    }
+
+    public Speed getScriptedMaxSpeed(Gauge gauge, Locomotive stock) {
+        return stock.localMaxSpeed != -1
+                ? Speed.fromMinecraft(gauge.scale() * (stock.localMaxSpeed / (20 * 3.6)))
+                : Speed.fromMinecraft(gauge.scale() * this.maxSpeed.minecraft());
     }
 
     public boolean getRadioCapability() {
         return this.hasRadioEquipment;
     }
-
+    
+    
     public boolean isLinearBrakeControl() {
         return isLinkedBrakeThrottle() || super.isLinearBrakeControl();
     }
@@ -153,5 +195,29 @@ public abstract class LocomotiveDefinition extends FreightDefinition {
 
     public double factorOfAdhesion() {
         return this.factorOfAdhesion;
+    }
+    
+    public boolean isSpeedLimiter() {
+        return this.speedLimiter;
+    }
+    
+    public double getPowerMultiplier() {
+        return powerMultiplier;
+    }
+    
+    public String getWorks() {
+        return works;
+    }
+    
+    public int getBrakeNotches() {
+        return brakeNotches;
+    }
+    
+    public boolean hasBrakeNotches() {
+        return hasBrakeNotches;
+    }
+    
+    public boolean hasCompressor() {
+        return hasCompressor;
     }
 }
