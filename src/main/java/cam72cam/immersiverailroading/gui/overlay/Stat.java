@@ -14,6 +14,9 @@ public enum Stat {
     LIQUID,
     MAX_LIQUID,
     UNITS_LIQUID,
+    ENERGY,
+    MAX_ENERGY,
+    UNITS_ENERGY,
     BOILER_PRESSURE,
     MAX_BOILER_PRESSURE,
     UNITS_BOILER_PRESSURE,
@@ -82,6 +85,19 @@ public enum Stat {
                         : "";
             case UNITS_LIQUID:
                 return "B";
+
+
+            case ENERGY:
+                return stock instanceof LocomotiveElectric ?
+                       String.format("%d", ((LocomotiveElectric) stock).getBatteryAmount())
+                                                    : "";
+            case MAX_ENERGY:
+                return stock instanceof LocomotiveElectric ?
+                       String.format("%d",
+                                     ((LocomotiveElectric)stock).getBatteryCapacity())
+                                                    : "";
+            case UNITS_ENERGY:
+                return "RF";
 
             case BOILER_PRESSURE:
                 return stock instanceof LocomotiveSteam ?
