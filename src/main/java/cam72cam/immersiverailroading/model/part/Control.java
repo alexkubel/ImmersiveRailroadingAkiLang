@@ -258,6 +258,7 @@ public class Control<T extends EntityMoveableRollingStock> extends Interactable<
         return noInteract;
     }
 
+    @SuppressWarnings("unused")
     private static String formatLabel(ModelComponentType label) {
         return WordUtils.capitalizeFully(label.name().replace("_X", "").replaceAll("_CONTROL", "").replaceAll("_", " ").toLowerCase(Locale.ROOT));
     }
@@ -294,11 +295,16 @@ public class Control<T extends EntityMoveableRollingStock> extends Interactable<
             case THROTTLE_X:
             case REVERSER_X:
             case THROTTLE_BRAKE_X:
+            case THROTTLE_DYN_BRAKE_X:
             case BELL_CONTROL_X:
             case WHISTLE_CONTROL_X:
             case HORN_CONTROL_X:
             case ENGINE_START_X:
             case CYLINDER_DRAIN_CONTROL_X:
+            case SANDING_CONTROL_X:
+            case HAND_BRAKE_X:
+            case DYNAMIC_BRAKE_X:
+            case COMPRESSOR_CONTROL_X:
                 if (part.type == ModelComponentType.REVERSER_X) {
                     percent *= -2;
                 }
@@ -340,7 +346,9 @@ public class Control<T extends EntityMoveableRollingStock> extends Interactable<
 
     public float getValue(EntityMoveableRollingStock stock) {
         float pos = stock.getControlPosition(this) + offset;
-        return (invert ? 1 - pos : pos) - (part.type == ModelComponentType.REVERSER_X || part.type == ModelComponentType.THROTTLE_BRAKE_X ? 0.5f : 0);
+        return (invert ? 1 - pos : pos) - (part.type == ModelComponentType.REVERSER_X
+                || part.type == ModelComponentType.THROTTLE_BRAKE_X
+                || part.type == ModelComponentType.THROTTLE_DYN_BRAKE_X ? 0.5f : 0);
     }
 
     public Vec3d transform(Vec3d point, T stock) {
@@ -354,11 +362,13 @@ public class Control<T extends EntityMoveableRollingStock> extends Interactable<
         return m.apply(point);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Vec3d center(EntityRollingStock stock) {
         return transform(part.center, (T)stock);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public IBoundingBox getBoundingBox(EntityRollingStock stock) {
         return IBoundingBox.from(
@@ -369,6 +379,7 @@ public class Control<T extends EntityMoveableRollingStock> extends Interactable<
 
     /** Client only! */
     private Vec3d lastClientLook = null;
+    @SuppressWarnings("unchecked")
     public float clientMovementDelta(Player player, EntityRollingStock stockRaw) {
         /*
           -X

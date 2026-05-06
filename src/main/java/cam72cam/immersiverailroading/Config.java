@@ -1,5 +1,6 @@
 package cam72cam.immersiverailroading;
 
+import cam72cam.immersiverailroading.library.BrakeMode;
 import cam72cam.immersiverailroading.library.Gauge;
 import cam72cam.mod.config.ConfigFile.Comment;
 import cam72cam.mod.config.ConfigFile.File;
@@ -91,9 +92,9 @@ public class Config {
 		@Name("Disable Independent Throttle")
 		public static boolean disableIndependentThrottle = true;
 
-		@Comment("Old style brake control")
-		@Name("Instant Brake Pressure")
-		public static boolean instantBrakePressure = false;
+		@Comment("Change brake mode. Possible: instant (old style), default, realistic")
+		@Name("Brake Mode")
+		public static BrakeMode brakeMode = BrakeMode.DEFAULT;
 
 		@Comment("Enable coupler slack")
 		public static boolean slackEnabled = true;
@@ -122,6 +123,10 @@ public class Config {
 		@Comment("Traction Multiplier: Higher numbers decreases wheel slip, lower numders increase wheel slip")
 		@Range(min = 0, max = 10)
 		public static double tractionMultiplier = 1.0;
+		
+        @Comment("Power Multiplier: Higher numbers increase the locomotive power, lower numbers decrease the power")
+        @Range(min = 0, max = 10)
+        public static double powerMultiplier = 1.0;
 		
 		@Comment( "How heavy is a single block in Kg" )
 		@Range(min = 0, max = 100)
@@ -233,6 +238,10 @@ public class Config {
 
 		@Comment("Round to nearest bucket")
 		public static boolean RoundStockTankToNearestBucket = true;
+		
+        @Comment("Sand Efficiency")
+        @Range(min = 1, max = 10)
+        public static int SandEfficiency = 1;
 	}
 
 	@Name("performance")
@@ -242,6 +251,12 @@ public class Config {
 
 		@Comment("How many MB of memory to reserve for stock loading per thread, higher numbers = safer but slower")
 		public static int megabytesReservedPerStockLoadingThread = 1024;
+
+		@Comment("Disables the Lua script implementation")
+		public static boolean disableLuaScript = false;
+
+		@Comment("Time until the Lua script is unloaded in seconds, if 0, then the script always runs, normally 45sec")
+		public static int luaScriptSleep = 45;
 	}
 
 	@Name("debug")
@@ -301,13 +316,18 @@ public class Config {
 		@Comment("Number of physics steps to cache for future movement / send in packets.  DO NOT CHANGE UNLESS YOU KNOW WHAT YOU ARE DOING")
 		@Range(min = 10, max = 60)
 		public static int physicsFutureTicks = 10;
+		
+	    @Comment( "Print extra info" )
+	    public static boolean debugLogging = false;
+
+		@Comment("Render Debug lines of text fields")
+		public static boolean renderDebugLines = false;
 
 		@Comment("Does stock drops itself/components when player is in creative mode?")
 		public static boolean stockDropInCreativeMode = true;
+		}
+	
+    public static boolean isFuelRequired(Gauge gauge) {
+        return !(!ConfigBalance.FuelRequired || (!ConfigBalance.ModelFuelRequired && gauge.isModel()));
 	}
-
-	public static boolean isFuelRequired(Gauge gauge) {
-		return !(!ConfigBalance.FuelRequired || (!ConfigBalance.ModelFuelRequired && gauge.isModel()));
-	}
-
 }

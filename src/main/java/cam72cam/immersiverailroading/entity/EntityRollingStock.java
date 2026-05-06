@@ -9,6 +9,7 @@ import cam72cam.immersiverailroading.library.*;
 import cam72cam.immersiverailroading.model.part.Control;
 import cam72cam.immersiverailroading.registry.DefinitionManager;
 import cam72cam.immersiverailroading.registry.EntityRollingStockDefinition;
+import cam72cam.immersiverailroading.util.ObservableMap;
 import cam72cam.immersiverailroading.util.MathUtil;
 import cam72cam.mod.entity.*;
 import cam72cam.mod.entity.sync.TagSync;
@@ -24,12 +25,15 @@ import cam72cam.mod.sound.SoundCategory;
 import cam72cam.mod.text.PlayerMessage;
 import cam72cam.mod.util.SingleCache;
 import org.apache.commons.lang3.tuple.Pair;
+import org.luaj.vm2.LuaValue;
 import util.Matrix4;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class EntityRollingStock extends CustomEntity implements ITickable, IClickable, IKillable {
 	@TagField("defID")
@@ -74,7 +78,6 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 		return false;
 	}
 
-
 	/* TODO?
 	@Override
 	public String getName() {
@@ -95,7 +98,8 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 	public EntityRollingStockDefinition getDefinition() {
 		return this.getDefinition(EntityRollingStockDefinition.class);
 	}
-	public <T extends EntityRollingStockDefinition> T getDefinition(Class<T> type) {
+	@SuppressWarnings("unchecked")
+    public <T extends EntityRollingStockDefinition> T getDefinition(Class<T> type) {
 		EntityRollingStockDefinition def = DefinitionManager.getDefinition(defID);
 		if (def == null) {
 			// This should not be hit, entity should be removed handled by tryJoinWorld
@@ -139,6 +143,8 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 	}
 
 	public void setTexture(String variant) {
+		@SuppressWarnings("unused")
+        Map<String, String> names = getDefinition().textureNames;
 		if (getDefinition().textureNames.containsKey(variant)) {
 			this.texture = variant;
 		}
@@ -276,7 +282,18 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 
 	@TagSync
 	@TagField(value="controlPositions", mapper = ControlPositionMapper.class)
-	protected Map<String, Pair<Boolean, Float>> controlPositions = new HashMap<>();
+	protected Map<String, Pair<Boolean, Float>> controlPositions = new ObservableMap<String, Pair<Boolean, Float>>() {
+		@Override
+		public void onChange(String key, Pair<Boolean, Float> oldValue, Pair<Boolean, Float> newValue) {
+			if (newValue == null) {
+				return;
+			}
+
+			if ((oldValue == null || !oldValue.getRight().equals(newValue.getRight())) && EntityRollingStock.this instanceof EntityScriptableRollingStock) {
+				((EntityScriptableRollingStock) EntityRollingStock.this).triggerEvent("onControlGroupChange", LuaValue.valueOf(key), LuaValue.valueOf(newValue.getRight()));
+			}
+		}
+	};
 
 	public void onDragStart(Control<?> control) {
 		setControlPressed(control, true);
@@ -291,7 +308,8 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 		setControlPressed(control, false);
 
 		if (control.toggle) {
-			setControlPosition(control, Math.abs(getControlPosition(control) - 1));
+			float controlPos = getControlPosition(control);
+			setControlPosition(control, Math.abs(controlPos - 1));
 		}
 		if (control.press) {
 			setControlPosition(control, 0);
@@ -325,6 +343,16 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 	public float getControlPosition(String control) {
 		return getControlData(control).getRight();
 	}
+	
+	public List<Control<?>> getControls(ModelComponentType type) {
+        return getDefinition().getModel().getControls().stream().filter(x -> x.part.type == type)
+                .collect(Collectors.toList());
+	}
+	
+	public OptionalDouble getMaxControlPositions(ModelComponentType type) {
+	    return getDefinition().getModel().getControls().stream().filter(x -> x.part.type == type)
+                .mapToDouble(this::getControlPosition).max();
+	}
 
 	public void setControlPosition(Control<?> control, float val) {
 		val = MathUtil.clamp(val, 0, 1);
@@ -341,7 +369,11 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 	}
 
 	public boolean playerCanDrag(Player player, Control<?> control) {
-		return control.part.type != ModelComponentType.INDEPENDENT_BRAKE_X || player.hasPermission(Permissions.BRAKE_CONTROL);
+		return true;
+	}
+
+	public void setEntityTag(String tag){
+		this.tag = tag;
 	}
 
 
@@ -357,4 +389,6 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 			);
 		}
 	}
+
+	
 }
