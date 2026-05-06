@@ -2,6 +2,7 @@ package cam72cam.immersiverailroading.gui.overlay;
 
 import cam72cam.immersiverailroading.entity.*;
 import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock.CouplerType;
+import cam72cam.immersiverailroading.library.unit.PressureDisplayType;
 import cam72cam.immersiverailroading.model.LocomotiveModel;
 import cam72cam.immersiverailroading.model.StockModel;
 import cam72cam.immersiverailroading.util.MathUtil;
@@ -34,6 +35,15 @@ public enum Readouts {
     CYLINDER_DRAIN,
     CARGO_FILL,
     ENGINE_RPM,
+    CHEST_PRESSURE,
+    HAND_BRAKE,
+    BRAKE_CYLINDER_PRESSURE,
+    DYNAMIC_BRAKE,
+    ROLLING_STOCK_PITCH,
+    TRACTIVE_EFFORT,
+    MAIN_AIR_RESERVOIR,
+    MAGNETIC_BRAKE,
+    SANDING,
     ;
 
     public float getValue(EntityRollingStock stock) {
@@ -45,7 +55,7 @@ public enum Readouts {
             case LIQUID:
                 return stock instanceof FreightTank ? ((FreightTank) stock).getPercentLiquidFull() / 100f : 0;
             case SPEED:
-                double maxSpeed = (stock instanceof Locomotive ? ((Locomotive) stock).getDefinition().getMaxSpeed(stock.gauge).metric() : 0);
+                double maxSpeed = (stock instanceof Locomotive ? ((Locomotive) stock).getDefinition().getScriptedMaxSpeed(stock.gauge, (Locomotive) stock).metric() : 0);
                 if (maxSpeed == 0) {
                     maxSpeed = 200;
                 }
@@ -60,19 +70,22 @@ public enum Readouts {
                 return 0;
             case BOILER_PRESSURE:
                 return stock instanceof LocomotiveSteam ?
-                        ((LocomotiveSteam) stock).getBoilerPressure() / ((LocomotiveSteam) stock).getDefinition().getMaxPSI(stock.gauge) : 0;
+                        ((LocomotiveSteam) stock).getBoilerPressureBar() / (((LocomotiveSteam) stock).getDefinition().getMaxPSI(stock.gauge) * PressureDisplayType.psiToBar) : 0;
             case THROTTLE:
                 return stock instanceof Locomotive ? ((Locomotive) stock).getThrottle() : 0;
             case REVERSER:
                 return stock instanceof Locomotive ? (((Locomotive) stock).getReverser() + 1) / 2 : 0;
             case TRAIN_BRAKE:
-                return stock instanceof Locomotive ? ((Locomotive) stock).getTrainBrake() : 0;
+                return stock instanceof Locomotive ? ((Locomotive) stock).getTrainBrakePos() : 0;
             case TRAIN_BRAKE_LEVER:
                 return stock.getDefinition().isLinearBrakeControl() ? TRAIN_BRAKE.getValue(stock) : lever;
             case INDEPENDENT_BRAKE:
                 return stock instanceof EntityMoveableRollingStock ? ((EntityMoveableRollingStock) stock).getIndependentBrake() : 0;
             case BRAKE_PRESSURE:
                 return stock instanceof EntityMoveableRollingStock ? ((EntityMoveableRollingStock) stock).getBrakePressure() : 0;
+            case BRAKE_CYLINDER_PRESSURE:
+                return stock instanceof EntityMoveableRollingStock ?
+                    ((EntityMoveableRollingStock) stock).getBrakeCylinderPressure() : 0;
             case COUPLER_FRONT:
                 return stock instanceof EntityCoupleableRollingStock ? ((EntityCoupleableRollingStock) stock).isCouplerEngaged(CouplerType.FRONT) ? 1 : 0 : 0;
             case COUPLER_REAR:
@@ -108,6 +121,31 @@ public enum Readouts {
                 return stock instanceof Freight ? ((Freight) stock).getPercentCargoFull() / 100f : 0;
             case ENGINE_RPM:
                 return stock instanceof LocomotiveDiesel ? ((LocomotiveDiesel) stock).getRelativeRPM() : 0;
+            case CHEST_PRESSURE:
+                return stock instanceof LocomotiveSteam
+                        ? ((LocomotiveSteam) stock).getChestPressurePercent()
+                        : 0;
+            case HAND_BRAKE:
+                return stock instanceof EntityMoveableRollingStock
+                        ? ((EntityMoveableRollingStock) stock).getHandBrake()
+                        : 0;
+            case DYNAMIC_BRAKE:
+                return (float) (stock instanceof LocomotiveDiesel ?
+                        ((LocomotiveDiesel) stock).getDynamicBrakeMultiplier() : 0);
+            case ROLLING_STOCK_PITCH:
+                return stock.getRotationPitch();
+            case TRACTIVE_EFFORT:
+                return stock instanceof Locomotive ?
+                        ((Locomotive) stock).getCurrentTractiveEffort() : 0;
+            case MAIN_AIR_RESERVOIR:
+                return (float) (stock instanceof Locomotive ?
+                        ((Locomotive) stock).getMainAirReservoir() : 0);
+            case MAGNETIC_BRAKE:
+                return stock instanceof EntityMoveableRollingStock ?
+                        ((EntityMoveableRollingStock) stock).getMagnetBrakeNewton() > 0 ?
+                                1 : 0 : 0;
+            case SANDING:
+                return stock instanceof Locomotive && ((Locomotive)stock).isSanding ? 1 : 0;
         }
         return 0;
     }
@@ -124,6 +162,7 @@ public enum Readouts {
         return 0.5f + yaw / deltaYaw;
     }
 
+    @SuppressWarnings("incomplete-switch")
     public void setValue(EntityRollingStock stock, float value) {
         switch (this) {
             case THROTTLE:
@@ -147,13 +186,13 @@ public enum Readouts {
                 } else {
                     if (stock instanceof Locomotive) {
                         // Logic duplicated in Locomotive#onTick
-                        ((Locomotive) stock).setTrainBrake(MathUtil.clamp(((Locomotive) stock).getTrainBrake() + (value - 0.5f) / 80, 0, 1));
+                        ((Locomotive) stock).setTrainBrake(MathUtil.clamp(((Locomotive) stock).getTrainBrakePos() + (value - 0.5f) / 80, 0, 1));
                     }
                 }
                 break;
             case INDEPENDENT_BRAKE:
-                if (stock instanceof EntityMoveableRollingStock) {
-                    ((EntityMoveableRollingStock) stock).setIndependentBrake(value);
+                if (stock instanceof Locomotive) {
+                    ((Locomotive) stock).setIndependentBrake(value);
                 }
                 break;
             case COUPLER_FRONT:

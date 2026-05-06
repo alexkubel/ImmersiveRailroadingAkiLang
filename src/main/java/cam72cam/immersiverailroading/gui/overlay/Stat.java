@@ -26,6 +26,9 @@ public enum Stat {
     CARGO_FILL,
     MAX_CARGO_FILL,
     UNITS_CARGO_FILL,
+    CHEST_PRESSURE,
+    MAX_CHEST_PRESSURE,
+    BRAKE_CYLINDER_PRESSURE
     ;
 
     private static final String[] formats = {"%.0f", "%.1f", "%.2f", "%.3f", "%.4f", "%.5f"};
@@ -54,7 +57,7 @@ public enum Stat {
                 return "";
             case MAX_SPEED:
                 if (stock instanceof Locomotive) {
-                    Speed speed = ((Locomotive)stock).getDefinition().getMaxSpeed(stock.gauge);
+                    Speed speed = ((Locomotive)stock).getDefinition().getScriptedMaxSpeed(stock.gauge, (Locomotive) stock);
                     switch (ConfigGraphics.speedUnit) {
                         case mph:
                             return String.format(format, Math.abs(speed.imperial()));
@@ -82,7 +85,7 @@ public enum Stat {
 
             case BOILER_PRESSURE:
                 return stock instanceof LocomotiveSteam ?
-                        String.format(format, ConfigGraphics.pressureUnit.convertFromPSI(((LocomotiveSteam) stock).getBoilerPressure())) : "";
+                        String.format(format, ConfigGraphics.pressureUnit.convertFromBar(((LocomotiveSteam) stock).getBoilerPressureBar())) : "";
             case MAX_BOILER_PRESSURE:
                 return stock instanceof LocomotiveSteam ?
                         String.format(format, ConfigGraphics.pressureUnit.convertFromPSI(((LocomotiveSteam) stock).getDefinition().getMaxPSI(stock.gauge)))
@@ -109,9 +112,14 @@ public enum Stat {
             case UNITS_TEMPERATURE:
                 return ConfigGraphics.temperatureUnit.toUnitString();
             case BRAKE_PRESSURE:
-                if (stock instanceof EntityMoveableRollingStock) {
-                    return String.format("%s", (int)(((EntityMoveableRollingStock) stock).getBrakePressure() * 100));
-                }
+                if (stock instanceof EntityMoveableRollingStock)
+                    return String.format("%s",
+                            (int) (((EntityMoveableRollingStock) stock).getBrakePressure() * 100));
+                return "";
+            case BRAKE_CYLINDER_PRESSURE:
+                if (stock instanceof EntityMoveableRollingStock)
+                    return String.format("%s",
+                            (int) (((EntityMoveableRollingStock) stock).getBrakeCylinderPressure() * 100));
                 return "";
             case MAX_BRAKE_PRESSURE:
                 return "100";
@@ -126,6 +134,16 @@ public enum Stat {
                 return "100";
             case UNITS_CARGO_FILL:
                 return "%";
+            case CHEST_PRESSURE:
+                return stock instanceof LocomotiveSteam
+                        ? String.format("%.1f", ConfigGraphics.pressureUnit
+                                .convertFromPSI(((LocomotiveSteam) stock).getChestPressurePsi()))
+                        : "";
+            case MAX_CHEST_PRESSURE:
+                return stock instanceof LocomotiveSteam
+                        ? String.format("%.1f", ConfigGraphics.pressureUnit
+                                .convertFromPSI(((LocomotiveSteam) stock).getMaxChestPressurePsi()))
+                        : "";
         }
         return "";
     }
