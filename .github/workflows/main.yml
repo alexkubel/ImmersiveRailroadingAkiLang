@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'master'
+      - 'Nordale2'
 
 jobs:
   build:
