@@ -3,7 +3,8 @@ name: Immersive Railroading Build Pipeline
 on: 
   push:
     branches:
-      - 'master'
+      - 'main'
+      - 'testbuild'
 
 jobs:
   build:
