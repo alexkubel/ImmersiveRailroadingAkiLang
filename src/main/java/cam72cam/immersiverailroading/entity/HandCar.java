@@ -27,6 +27,7 @@ public class HandCar extends Locomotive {
 			}
 		}
 		// Same as diesel for now
+        // TODO add script support!
 		double maxPower_W = this.getDefinition().getWatt(gauge) * passengers;
 		double efficiency = 0.82; // Similar to a *lot* of imperial references
 		double speed_M_S = (Math.abs(speed.metric())/3.6);
@@ -53,7 +54,7 @@ public class HandCar extends Locomotive {
 			return;
 		}
 
-		if (getTrainBrake() > 0) {
+		if (getTrainBrakePos() > 0) {
 			this.setTrainBrake(0);
 		}
 
