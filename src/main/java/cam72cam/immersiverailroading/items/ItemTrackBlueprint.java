@@ -70,6 +70,7 @@ public class ItemTrackBlueprint extends CustomItem {
 				stackInfo = stackInfo.with(b -> b.railBed = blockinfo);
 			}
 			stackInfo.write(stack);
+			multiSwitchInfo.write(stack);
 			return ClickResult.ACCEPTED;
 		}
 
