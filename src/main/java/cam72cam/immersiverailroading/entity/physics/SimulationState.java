@@ -127,7 +127,7 @@ public class SimulationState {
         public float delta;
         public float mainAirReservoir;
         public float mainReservoirSizeFactor;
-        public bloat rigidWheelbase;
+        public float rigidWheelbase;
 
         public Configuration(EntityCoupleableRollingStock stock) {
             debugID = stock.getDefinitionID();
