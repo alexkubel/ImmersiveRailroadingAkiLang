@@ -80,7 +80,6 @@ public class SimulationState {
         public UUID id;
         public Gauge gauge;
         public World world;
-
         public double width;
         public double length;
         public double height;
