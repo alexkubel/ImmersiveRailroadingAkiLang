@@ -134,7 +134,7 @@ public class SimulationState {
             id = stock.getUUID();
             gauge = stock.gauge;
             world = stock.getWorld();
-            rigidWheelbase=stock.getDefinition().getRigidWheelbase()
+            rigidWheelbase=stock.getDefinition().getRigidWheelbase();
             this.stock = stock;
             width = stock.getDefinition().getWidth(gauge);
             length = stock.getDefinition().getLength(gauge);
