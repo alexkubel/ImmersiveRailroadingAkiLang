@@ -115,7 +115,7 @@ public class SimulationState {
         public boolean isSanding;
 
         public boolean hasPressureBrake;
-        
+        public EntityCoupleableRollingStock stock;
         public float trainBrakePosition;
         public float trainBrakePressure;
         public float brakeCylinderPressure;
@@ -127,13 +127,15 @@ public class SimulationState {
         public float delta;
         public float mainAirReservoir;
         public float mainReservoirSizeFactor;
+        public bloat rigidWheelbase;
 
         public Configuration(EntityCoupleableRollingStock stock) {
             debugID = stock.getDefinitionID();
             id = stock.getUUID();
             gauge = stock.gauge;
             world = stock.getWorld();
-
+            rigidWheelbase=stock.getDefinition().getRigidWheelbase()
+            this.stock = stock;
             width = stock.getDefinition().getWidth(gauge);
             length = stock.getDefinition().getLength(gauge);
             height = stock.getDefinition().getHeight(gauge);
@@ -495,9 +497,9 @@ public class SimulationState {
         double blockResistanceNewtons = interferingResistance * 1000 * Config.ConfigDamage.blockHardness;
 
         Gauge gauge = config.gauge;
-        double yawDelta = DegreeFuncs.delta(config.stock.getFrontYaw(), config.stock.getRearYaw()) /
-               Math.abs(config.stock.getDefinition().getBogeyFront(gauge) - config.stock.getDefinition().getBogeyRear(gauge));
-        double curveResistanceNewtons = 0.0034 * (0.72 * gauge.value() + 0.47 * config.stock.getDefinition().getRigidWheelbase()) * yawDelta * defaultNewtons;
+        double yawDelta = DegreeFuncs.delta(config.getFrontYaw(), config.getRearYaw()) /
+               Math.abs(config.getDefinition().getBogeyFront(gauge) - config.getDefinition().getBogeyRear(gauge));
+        double curveResistanceNewtons = 0.0034 * (0.72 * gauge.value() + 0.47 * rigidWheelbase) * yawDelta * defaultNewtons;
         
         double brakeCylinderNewtons = Math.max(config.designAdhesionNewtons * calculateBrakePressure(), config.handBrakeNewtons);
         double dynamicBrakeNewtons = config.dynamicBrakeNewtons;
