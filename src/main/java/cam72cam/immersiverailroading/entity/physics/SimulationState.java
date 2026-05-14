@@ -494,10 +494,9 @@ public class SimulationState {
         // TODO This is kinda directional?
         double blockResistanceNewtons = interferingResistance * 1000 * Config.ConfigDamage.blockHardness;
 
-        //Gauge gauge = config.gauge;
-        //double yawDelta = DegreeFuncs.delta(config.stock.getFrontYaw(), config.stock.getRearYaw()) /
-        //        Math.abs(config.stock.getDefinition().getBogeyFront(gauge) - config.stock.getDefinition().getBogeyRear(gauge));
-        //
+        Gauge gauge = config.gauge;
+        double yawDelta = DegreeFuncs.delta(config.stock.getFrontYaw(), config.stock.getRearYaw()) /
+               Math.abs(config.stock.getDefinition().getBogeyFront(gauge) - config.stock.getDefinition().getBogeyRear(gauge));
         double curveResistanceNewtons = 0.0034 * (0.72 * gauge.value() + 0.47 * config.stock.getDefinition().getRigidWheelbase()) * yawDelta * defaultNewtons;
         
         double brakeCylinderNewtons = Math.max(config.designAdhesionNewtons * calculateBrakePressure(), config.handBrakeNewtons);
