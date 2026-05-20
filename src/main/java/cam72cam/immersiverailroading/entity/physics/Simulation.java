@@ -2,7 +2,9 @@ package cam72cam.immersiverailroading.entity.physics;
 
 import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.ImmersiveRailroading;
+import cam72cam.immersiverailroading.Config.ConfigDebug;
 import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock;
+import cam72cam.immersiverailroading.entity.Locomotive;
 import cam72cam.immersiverailroading.entity.physics.chrono.ChronoState;
 import cam72cam.immersiverailroading.entity.physics.chrono.ServerChronoState;
 import cam72cam.immersiverailroading.net.MRSSyncPacket;
@@ -102,11 +104,14 @@ public class Simulation {
                         SimulationState state = new SimulationState(stock);
                         state.tickID = tickID;
                         stateMap.put(stock.getUUID(), state);
+                        
                     }
                 }
 
                 SimulationState state = stateMap.get(stock.getUUID());
-
+                if (stock instanceof Locomotive && state.config.delta != 0) {
+                    ((Locomotive) stock).mainAirReservoir(state.config.delta);
+                }
 
                 // Don't need to load
                 if (state.atRest && !state.dirty) {
@@ -115,6 +120,9 @@ public class Simulation {
 
                 // Keep it loaded
                 world.keepLoaded(new Vec3i(state.position));
+                // TODO Debugging
+                if (ConfigDebug.debugLog && tickID % 76 == 0)
+                    System.out.println("Loaded Chunk at: " + state.position.x + ", " + state.position.y + ", " + state.position.z);
 
                 if (state.consist.positions == null) {
                     continue;

@@ -42,6 +42,19 @@ element:
                 0.6666 = "0x99d16c15"
                 0.9333 = "0x99a21010"
         element:
+            # main air pressure
+            x = 47
+            y = 75
+            image = "immersiverailroading:gui/main_air_pressure.png"
+            readout = "MAIN_AIR_RESERVOIR"
+            translate =
+                x = 0
+                y = -50
+            scale =
+                y = 1
+            color =
+                0 = "0x9900aae3"
+        element:
             # brake pressure
             x = 41
             y = 74
@@ -52,6 +65,17 @@ element:
                 y = -50
             color =
                 0.0 = "0xDDa22020"
+        element:
+            # brake cylinder pressure
+            x = 47
+            y = 74
+            image = "immersiverailroading:gui/indicator.png"
+            readout = "BRAKE_CYLINDER_PRESSURE"
+            translate =
+                x = 0
+                y = -50
+            color =
+                0.0 = "0xDDa4ffa4"
         element:
             # train brake
             x = 41

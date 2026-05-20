@@ -16,10 +16,12 @@ item.immersiverailroading:item_cast_rail.name=Schienenguss
 item.immersiverailroading:item_manual.name=Immersive Railroading Handbuch
 item.immersiverailroading:item_rail.name=Schienenplan
 item.immersiverailroading:item_conductor_whistle.name=Pfeife
-item.immersiverailroading:item_golden_spike.name=Golden Spike
+item.immersiverailroading:item_golden_spike.name=Goldener Schienennagel
 item.immersiverailroading:item_radio_control_card.name=Zug-Funksteuerungs-Chip
 item.immersiverailroading:item_switch_key.name=Weichenschlüssel
 item.immersiverailroading:item_track_exchanger.name=Schienenaustausch Werkzeug
+
+item.immersiverailroading:item_wireless_remotecontrol.name=Funkfernsteuerung
 
 tile.immersiverailroading:block_rail.name=Schiene
 tile.immersiverailroading:block_rail_gag.name=Schiene (Gag)
@@ -63,8 +65,13 @@ chat.immersiverailroading:switch_state.reset=Die zuletzt gesperrte Weiche wurde 
 chat.immersiverailroading:switch_state.cant_reset=Sie haben mit diesem Schlüssel keine Weiche gesperrt!
 chat.immersiverailroading:switch_state.already_reset=Die zuletzt gesperrte Weiche ist bereits entsperrt!
 chat.immersiverailroading:multiblock.select=Ausgewählter Multiblock: %s
+chat.immersiverailroading:brake.locked=Bremse abgesperrt: %s
+chat.immersiverailroading:wireless.remotecontrol.link=Funksteuerung verlinkt!
+chat.immersiverailroading:wireless.remotecontrol.relink=Funksteuerung verlinkt!
+chat.immersiverailroading:wireless.remotecontrol.unlink=Funksteuerung getrennt!
+chat.immersiverailroading:wireless.remotecontrol.cantlink=Lokomotive hat keine Funksteuerung !
 
-gui.immersiverailroading:label.brake=Zugbremse
+gui.immersiverailroading:label.brake=Bremse
 gui.immersiverailroading:label.throttle=Fahrschalter
 gui.immersiverailroading:label.reverser=Richtungswender
 gui.immersiverailroading:slider.zoom=Zoom:
@@ -241,6 +248,8 @@ part.immersiverailroading:controls.throttle=Leistungsregler
 part.immersiverailroading:controls.reverser=Richtungswender
 part.immersiverailroading:controls.throttle_brake=Fahr-Bremshebel
 part.immersiverailroading:controls.engine_start=Motorstart
+part.immersiverailroading:controls.sanding_control=Sanden
+part.immersiverailroading:controls.compressor_control=Kompressorsteuerung
 
 multiblock.immersiverailroading:boiler_machine=Kessel Maschine
 multiblock.immersiverailroading:casting=Gußbecken
@@ -306,6 +315,13 @@ ir_keys.bell=Glocke
 ir_keys.dead_mans_switch=Todmannsschalter
 ir_keys.start_stop_engine=Motor an-/ausschalten
 ir_keys.config=Config
+ir_keys.sanding=Sanden
+ir_keys.increase_hand_brake=Handbremse erhöhen
+ir_keys.zero_hand_brake=Handbremse zurücksetzen
+ir_keys.decrease_hand_brake=Handbremse reduzieren
+ir_keys.increase_dynamic_brake=Dynamische Bremse erhöhen
+ir_keys.zero_dynamic_brake=Dynamische Bremse zurücksetzen
+ir_keys.decrease_dynamic_brake=Dynamische Bremse reduzieren
 
 # Default pack's train name. Translation is optional.
 immersiverailroading:entity.locomotives.a1_peppercorn=A1 Peppercorn

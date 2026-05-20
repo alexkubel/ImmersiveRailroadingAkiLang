@@ -27,6 +27,9 @@ public class LocomotiveDieselDefinition extends LocomotiveDefinition {
     private int notches;
     private float enginePitchRange;
     public boolean hasDynamicTractionControl;
+    private int dynamicBrake;
+    private boolean isLinkedDynBrakeThrottle;
+    private boolean isLinkedBrakeDynBrake;
 
     public LocomotiveDieselDefinition(String defID, DataBlock data) throws Exception {
         super(LocomotiveDiesel.class, defID, data);
@@ -76,13 +79,15 @@ public class LocomotiveDieselDefinition extends LocomotiveDefinition {
         notches = properties.getValue("throttle_notches").asInteger();
 
         hornSus = properties.getValue("horn_sustained").asBoolean();
-
+        dynamicBrake = properties.getValue("dynamic_brake_newton").asInteger(0);
+        isLinkedDynBrakeThrottle = properties.getValue("isLinkedDynamicBrakeThrottle").asBoolean(false);
+        isLinkedBrakeDynBrake = properties.getValue("isLinkedBrakeDynamicBrake").asBoolean(false);
+        
         DataBlock sounds = data.getBlock("sounds");
         idle = SoundDefinition.getOrDefault(sounds, "idle");
         running = SoundDefinition.getOrDefault(sounds, "running");
         enginePitchRange = sounds.getValue("engine_pitch_range").asFloat();
         horn = SoundDefinition.getOrDefault(sounds, "horn");
-        bell = SoundDefinition.getOrDefault(sounds, "bell");
     }
 
     @Override
@@ -96,7 +101,7 @@ public class LocomotiveDieselDefinition extends LocomotiveDefinition {
                 GuiBuilder.parse(new Identifier(ImmersiveRailroading.MODID, "gui/default/cab_car.caml")) :
                 GuiBuilder.parse(new Identifier(ImmersiveRailroading.MODID, "gui/default/diesel.caml"));
     }
-
+    
     @Override
     public StockModel<?, ?> getModel() {
         return (DieselLocomotiveModel) super.getModel();
@@ -128,7 +133,19 @@ public class LocomotiveDieselDefinition extends LocomotiveDefinition {
     public float getEnginePitchRange() {
         return enginePitchRange;
     }
+    
+    public int getDynamicBrakeNewton() {
+        return dynamicBrake;
+    }
+    
+    public boolean isLinkedDynBrakeThrottle() {
+        return isLinkedDynBrakeThrottle;
+    }
 
+    public boolean isLinkedBrakeDynBrake() {
+        return isLinkedBrakeDynBrake;
+    }
+    
     public Map<Fluid, Integer> getOverriddenFuels() {
         return overriddenFuels;
     }

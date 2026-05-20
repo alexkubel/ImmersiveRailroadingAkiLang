@@ -1,5 +1,8 @@
 package cam72cam.immersiverailroading.util;
 
+import cam72cam.mod.math.Vec3d;
+import cam72cam.mod.model.obj.OBJFace;
+
 public class MathUtil {
 	public static double gradeToRadians(double grade) {
 		return Math.atan2(grade, 100);
