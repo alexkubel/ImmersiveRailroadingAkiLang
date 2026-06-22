@@ -81,7 +81,7 @@ public class LocomotiveSteam extends Locomotive {
 		return boilerTemperature;
 	}
 	
-	private void setBoilerTemperature(float temp) {
+	public void setBoilerTemperature(float temp) {
 		boilerTemperature = temp;
 	}
 	
@@ -101,7 +101,7 @@ public class LocomotiveSteam extends Locomotive {
 	    return boilerPressureBar * PressureDisplayType.BarToPsi / getMaxBoilerPSI();
 	}
 	
-	private void setBoilerPressureBar(float pressure) {
+	public void setBoilerPressureBar(float pressure) {
 	    boilerPressureBar = pressure;
 	}
 	

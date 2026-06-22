@@ -17,6 +17,8 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 public abstract class FreightTank extends Freight {
 	@TagField("tank")
 	public FluidTank theTank = new FluidTank(null, 0);
@@ -65,6 +67,13 @@ public abstract class FreightTank extends Freight {
 	
 	public int getLiquidAmount() {
 		return fluidAmount;
+	}
+	
+	public void setLiquidAmount(int fluidAmount, @Nullable String fluidType) {
+		this.fluidAmount = fluidAmount;
+		if (fluidType != null) {
+			this.fluidType = fluidType;
+		}
 	}
 	
 	public Fluid getLiquid() {

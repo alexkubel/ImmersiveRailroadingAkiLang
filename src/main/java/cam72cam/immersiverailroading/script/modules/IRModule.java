@@ -24,6 +24,8 @@ import org.luaj.vm2.LuaValue;
 
 import java.util.*;
 
+import javax.annotation.Nullable;
+
 public class IRModule implements LuaModule {
     private final EntityScriptableRollingStock stock;
 
@@ -486,6 +488,44 @@ public class IRModule implements LuaModule {
 
         return LuaValue.valueOf(0);
     }
+    
+    @LuaFunction(module = "IR")
+    public void setBoilerTemp(LuaValue value) {
+        if (stock instanceof LocomotiveSteam) {
+            ((LocomotiveSteam) stock).setBoilerTemperature(value.tofloat());
+        }
+    }
+    
+    @LuaFunction(module = "IR")
+    public LuaValue getBoilerTemp() {
+        if (stock instanceof LocomotiveSteam) {
+            LuaValue.valueOf(((LocomotiveSteam) stock).getBoilerTemperature());
+        }
+        return LuaValue.valueOf(0);
+    }
+    
+    @LuaFunction(module = "IR")
+    public void setLiquidCargoAmount(LuaValue amount) {
+        if (stock instanceof FreightTank) {
+            ((FreightTank) stock).setLiquidAmount(amount.toint(), null);
+        }
+    }
+    
+    @LuaFunction(module = "IR")
+    public void setLiquidCargoAmount(LuaValue amount, LuaValue liquid) {
+        if (stock instanceof FreightTank) {
+            ((FreightTank) stock).setLiquidAmount(amount.toint(), liquid.toString());
+        }
+    }
+    
+    @LuaFunction(module = "IR")
+    public LuaValue getLiquidCargoAmount() {
+        if (stock instanceof FreightTank) {
+            LuaValue.valueOf(((FreightTank) stock).getLiquidAmount());
+        }
+        return LuaValue.valueOf(0);
+    }
+
 
     @LuaFunction(module = "IR", name = "getBoilerPressure")
     public LuaValue getBoilerPressureLua() {
@@ -495,6 +535,12 @@ public class IRModule implements LuaModule {
         }
 
         return LuaValue.valueOf(0);
+    }
+    
+    @LuaFunction(module = "IR")
+    public void setBoilerPressure(LuaValue value) {
+        if (stock instanceof LocomotiveSteam)
+            ((LocomotiveSteam) stock).setBoilerPressureBar(value.tofloat());
     }
     
     @LuaFunction(module = "IR")
