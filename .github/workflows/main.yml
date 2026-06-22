@@ -3,9 +3,7 @@ name: Immersive Railroading Build Pipeline
 on:
   push:
     branches:
-      - 'master'
-      - 'fixedNullPointer'
-      - 'testbuild' 
+      - 'master' 
 
 jobs:
   build:
@@ -40,33 +38,10 @@ jobs:
     - name: Install deps
       run: sudo apt install -y pngquant findutils xvfb
 
-    - name: Download LuaJ 3.0.2 JAR
-      run: |
-        mkdir -p libs
-        curl -L -o libs/luaj-jse-3.0.2.jar https://github.com/luaj/luaj/releases/download/v3.0.2/luaj-jse-3.0.2.jar
-
     - name: Setup Universal Mod Core (and helpers)
       env:
         BRANCH: ${{ matrix.branch }}
       run: java -jar UMCSetup.jar ${BRANCH} https
-
-    - name: Modify build.gradle to Include LuaJ and Merge JARs
-      run: |
-        echo "" >> build.gradle
-        echo "repositories {" >> build.gradle
-        echo "    flatDir { dirs 'libs' }" >> build.gradle
-        echo "}" >> build.gradle
-        echo "" >> build.gradle
-        echo "dependencies {" >> build.gradle
-        echo "    implementation fileTree(dir: 'libs', include: ['*.jar'])" >> build.gradle
-        echo "}" >> build.gradle
-        echo "" >> build.gradle
-        echo "jar {" >> build.gradle
-        echo "    duplicatesStrategy = DuplicatesStrategy.EXCLUDE" >> build.gradle
-        echo "    from {" >> build.gradle
-        echo "        fileTree(dir: 'libs', include: ['*.jar']).collect { zipTree(it) }" >> build.gradle
-        echo "    }" >> build.gradle
-        echo "}" >> build.gradle
 
     - name: Gradle compile
       run: ./gradlew classes
@@ -81,23 +56,7 @@ jobs:
     #  env:
     #    MAVENCI_PASS: ${{ secrets.MAVENCI_PASS }}
     #  run: ./gradlew publish
-    # - uses: actions/upload-artifact@v6
-    #  with:
-    #    name: Immersive Railroading ${{matrix.branch}}
-    #    path: build/libs/ImmersiveRailroading-${{matrix.branch}}-*
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
+    - uses: actions/upload-artifact@v6
       with:
-        tag_name: v${{ github.run_number }}
-        name: Testbuild v${{ github.run_number }}
-        draft: false
-        prerelease: false
-        files: build/libs/*.jar
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    #- name: Gradle publish
-    #  env:
-    #    MAVENCI_PASS: ${{ secrets.MAVENCI_PASS }}
-    #  run: ./gradlew publish
+        name: Immersive Railroading ${{matrix.branch}}
+        path: build/libs/ImmersiveRailroading-${{matrix.branch}}-*
