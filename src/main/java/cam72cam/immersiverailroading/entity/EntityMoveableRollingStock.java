@@ -141,6 +141,10 @@ public abstract class EntityMoveableRollingStock extends EntityCustomPlayerMovem
         }
         return currentSpeed;
     }
+    
+    public Speed getRealSpeed() {
+    	return getCurrentSpeed();
+    }
 
     public void setCurrentSpeed(Speed newSpeed) {
         this.currentSpeed = newSpeed;
