@@ -205,11 +205,6 @@ public class LocomotiveDiesel extends Locomotive {
 		    break;
 		}
 	}
-	
-    @Override
-    public float getThrottleDelta() {
-        return 1F / this.getDefinition().getThrottleNotches();
-    }
 
 	@Override
 	public boolean providesElectricalPower() {
