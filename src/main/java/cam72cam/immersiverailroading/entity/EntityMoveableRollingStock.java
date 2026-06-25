@@ -664,4 +664,16 @@ public abstract class EntityMoveableRollingStock extends EntityCustomPlayerMovem
                 Math.abs(getDefinition().getBogeyFront(gauge) - getDefinition().getBogeyRear(gauge));
         return yawDelta;
     }
+    
+    public float getCurveCoefficient() {
+        return getDefinition().getCurveCoefficient() * Config.ConfigBalance.curveResistanceMultiplier;
+    }
+    
+    public float getDragCoefficient() {
+        return getDefinition().getCurveCoefficient() * Config.ConfigBalance.dragResistanceMultiplier;
+    }
+    
+    public float getDragExponent() {
+    	return Config.ConfigBalance.dragResistanceExponent;
+    }
 }

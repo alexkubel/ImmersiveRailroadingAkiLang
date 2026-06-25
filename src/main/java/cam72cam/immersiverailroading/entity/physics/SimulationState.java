@@ -129,6 +129,7 @@ public class SimulationState {
         private float angle;
         private float curveResistanceCoefficient;
         private float dragCoefficient;
+        private float dragExponent;
 
         public Configuration(EntityCoupleableRollingStock stock) {
             debugID = stock.getDefinitionID();
@@ -181,7 +182,7 @@ public class SimulationState {
 
             float staticFriction = PhysicalMaterials.STEEL.staticFriction(PhysicalMaterials.STEEL);
             this.maximumAdhesionNewtons = massKg * staticFriction * 9.8 * stock.getBrakeAdhesionEfficiency();
-            this.designAdhesionNewtons = stock.getBrakingWeight() * staticFriction * 9.8 * stock.getBrakeSystemEfficiency() * (stock instanceof Locomotive ? 0.75f : 1);
+            this.designAdhesionNewtons = stock.getBrakingWeight() * staticFriction * 9.8 * stock.getBrakeSystemEfficiency();
             this.independentBrake = stock.getIndependentBrake();
             this.handBrakeNewtons = stock.getHandBrake() * 9.8 * 0.05 * stock.getDefinition().getWeight(gauge) * stock.getDefinition().getHandBrakeCoefficient();
             if (stock instanceof LocomotiveDiesel) {
@@ -202,8 +203,9 @@ public class SimulationState {
             this.brakeSystemEfficiency = stock.getBrakeSystemEfficiency();
             this.hasEpBrake = stock.getDefinition().hasEpBrake();
             this.angle = stock.getAngle();
-            this.curveResistanceCoefficient = stock.getDefinition().getCurveCoefficient();
-            this.dragCoefficient = stock.getDefinition().getDragCoefficient();
+            this.curveResistanceCoefficient = stock.getCurveCoefficient();
+            this.dragCoefficient = stock.getDragCoefficient();
+            this.dragExponent = stock.getDragExponent();
             
             this.isSingleRelease = stock.isSingleRelease;
         }
@@ -506,8 +508,8 @@ public class SimulationState {
         // r = 60 / angle -> R ~= 0.012 * angle * c * N
         double curveResistanceNewtons = 0.012f * config.angle * config.curveResistanceCoefficient * defaultNewtons;
 
-        // R = 0.5 * Cd * rho * A * v^2 = 0.5 * Cd * 1.25 * gauge / 1.435 * 10 * v^2 = 4.355 * Cd * gauge * v^2
-        double dragResistanceNewtons = 4.355f * config.dragCoefficient * config.gauge.value()  * Math.pow(Math.abs(Speed.fromMinecraft(velocity).metric()), 2);
+        // R = 0.5 * Cd * rho * A * v^2 = 0.5 * Cd * 1.25 * gauge / 1.435 * 10 * v^2 = 4.355 * Cd * gauge * v^2 [^1.6]
+        double dragResistanceNewtons = 4.355f * config.dragCoefficient * config.gauge.value() * Math.pow(Math.abs(Speed.fromMinecraft(velocity).metric()), config.dragExponent);
 
         float brakePressure = calculateBrakePressure();
 
