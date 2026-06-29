@@ -522,7 +522,7 @@ public abstract class EntityRollingStockDefinition {
         isLinearBrakeControl = properties.getValue("linear_brake_control").asBoolean();
         speedBrakeSqueal = properties.getValue("speed_brake_squeal").asInteger(45);
         curveResistanceCoefficient = properties.getValue("curve_friction_coefficient").asFloat(1.0f);
-        dragCoefficient = properties.getValue("drag_friction_coefficient").asFloat(0.1f);
+        dragCoefficient = properties.getValue("drag_friction_coefficient").asFloat(0.05f);
         
         script = data.getValue("script").asIdentifier();
 

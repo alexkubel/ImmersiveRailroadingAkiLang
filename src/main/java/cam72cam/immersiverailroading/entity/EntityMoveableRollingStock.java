@@ -670,7 +670,7 @@ public abstract class EntityMoveableRollingStock extends EntityCustomPlayerMovem
     }
     
     public float getDragCoefficient() {
-        return getDefinition().getCurveCoefficient() * Config.ConfigBalance.dragResistanceMultiplier;
+        return getDefinition().getDragCoefficient() * Config.ConfigBalance.dragResistanceMultiplier;
     }
     
     public float getDragExponent() {
