@@ -68,6 +68,6 @@ jobs:
         name: Testbuild v${{ github.run_number }}
         draft: false
         prerelease: false
-        files: build/libs/*.jar
+        files: build/libs/ImmersiveRailroading-${{ matrix.branch }}-SteamSim-v${{ github.run_number }}.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
