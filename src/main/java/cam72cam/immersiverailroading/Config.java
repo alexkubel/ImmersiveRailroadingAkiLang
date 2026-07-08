@@ -101,6 +101,9 @@ public class Config {
 
         @Comment("Enable CARGO_FILL and CARGO_ITEMS load items dropped to the world")
         public static boolean allowCargoLoadDroppedItem = true;
+        
+        @Comment("[Server] Enable automatic reverser for steam engines (old style)")
+        public static boolean automaticReverser = false;
     }
 
 	@Name("balance")
@@ -242,6 +245,18 @@ public class Config {
         @Comment("Sand Efficiency")
         @Range(min = 1, max = 10)
         public static int SandEfficiency = 1;
+        
+        @Comment("Drag resistance exponent. Default: 1.6")
+        @Range(min = 0, max = 10)
+        public static float dragResistanceExponent = 1.6f;
+        
+        @Comment("Drag resistance multiplier. Default: 1.0")
+        @Range(min = 0, max = 10)
+        public static float dragResistanceMultiplier = 1.0f;
+        
+        @Comment("Curve resistance multiplier. Default: 1.0")
+        @Range(min = 0, max = 10)
+        public static float curveResistanceMultiplier = 1.0f;
 	}
 
 	@Name("performance")

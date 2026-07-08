@@ -81,7 +81,7 @@ public class LocomotiveSteam extends Locomotive {
 		return boilerTemperature;
 	}
 	
-	private void setBoilerTemperature(float temp) {
+	public void setBoilerTemperature(float temp) {
 		boilerTemperature = temp;
 	}
 	
@@ -101,7 +101,7 @@ public class LocomotiveSteam extends Locomotive {
 	    return boilerPressureBar * PressureDisplayType.BarToPsi / getMaxBoilerPSI();
 	}
 	
-	private void setBoilerPressureBar(float pressure) {
+	public void setBoilerPressureBar(float pressure) {
 	    boilerPressureBar = pressure;
 	}
 	
@@ -148,14 +148,17 @@ public class LocomotiveSteam extends Locomotive {
         if (def.isCabCar())
             return 0;
         
-        double reverser = getReverser();
+        float reverser = getReverser();
         if (reverser == 0 || getBoilerPressureBar() == 0 && ConfigBalance.FuelRequired)
             return 0;
-
-        double expansion = 1.05 / (Math.abs(reverser) * (Math.abs(reverser) + 0.05));
+        
+        double speedPerc = speedPercent(speed);
+        float absReverser = getAbsReverser(speedPerc, Math.abs(reverser));
+        
+        double expansion = 1.05 / (absReverser * (absReverser + 0.05));
         double expansionPressure = getChestPressureBar() / expansion * (1 + Math.log(expansion));
-        double backPressure = expansionPressure * Math.log(1 + 2.67 * speedPercent(speed)
-                * Math.abs(reverser) * (def.getCylinderCount() == 3 ? 1.15 : 1));
+        double backPressure = expansionPressure * Math.log(1 + 2.67 * speedPerc
+                * absReverser * (def.getCylinderCount() == 3 ? 1.15 : 1));
         double pressurePercent = (expansionPressure - backPressure) / getMaxChestPressure();
         
         if (pressurePercent <= 0)
@@ -163,8 +166,12 @@ public class LocomotiveSteam extends Locomotive {
         
         return 50445 * def.getCylinderCount() * def.getPistonDiameter(gauge) * def.getPistonDiameter(gauge)
                 * def.getPistonStroke(gauge) * getMaxChestPressure() / def.getWheelDiameter(gauge)
-                * def.getPowerMultiplier() * Math.pow(pressurePercent, 1.5 * (0.3 * Math.abs(reverser) + 0.7))
+                * def.getPowerMultiplier() * Math.pow(pressurePercent, 1.5 * (0.3 * absReverser + 0.7))
                 * ConfigBalance.powerMultiplier * Math.copySign(1, reverser);
+    }
+    
+    private float getAbsReverser(double speed, float reverser) {
+    	return Config.ImmersionConfig.automaticReverser && speed > 0.05 ? Math.min((float) (-0.3f * Math.log(speed) + 0.28f), reverser) : reverser;
     }
     
 	@Override
@@ -183,17 +190,18 @@ public class LocomotiveSteam extends Locomotive {
         float throttle = getThrottle();
         if (throttle == 0 && pressure == 0)
             return;
-        
         double speedPercent = speedPercent(super.getCurrentSpeed());
-        pressure += 0.06f * Math.pow(Config.isFuelRequired(gauge) ? getBoilerPressureBar() : (getMaxBoilerPSI() * PressureDisplayType.psiToBar), 0.5f) * throttle * (1 + Math.max(speedPercent, 0.01f));
-
+        // Chest pressure inflow; Idk why but the "* (1 + speedPercent)" is needed
+        pressure += 0.06f * Math.sqrt(Config.isFuelRequired(gauge) ? getBoilerPressureBar() : (getMaxBoilerPSI() * PressureDisplayType.psiToBar)) * throttle * (1 + speedPercent);
+        // Chest pressure outflow through cylinder drains
         if (cylinderDrainsEnabled()) {
-            pressure -= 0.07f;
+            pressure -= 0.05f;
         }
-        
-        pressure -= (0.015f * pressure
-                * Math.abs(getReverser()) * speedPercent * Math.PI * getDefinition().getWheelDiameter(gauge)) + 0.005f;
-
+        // Chest pressure outflow through reverser and speed
+        pressure -= 0.095f * pressure * getAbsReverser(speedPercent, Math.abs(getReverser())) * speedPercent;
+        // Default chest pressure leakage
+        pressure -= 0.005f;
+        // Chest pressure outflow through slipping wheels (fast cylinder movement)
         if (slipping) {
             pressure -= Math.abs(0.3f * simulateWheelSlip());
         }
