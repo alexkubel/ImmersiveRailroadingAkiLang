@@ -210,21 +210,25 @@ public class IRModule implements LuaModule {
     public LuaValue getTag(LuaValue tag) {
         return LuaValue.valueOf(stock.tag);
     }
-
+    
     @LuaFunction(module = "IR", name = "getTrain")
     public LuaTable getTrainConsist() {
-        List<EntityCoupleableRollingStock> train = stock.getTrain();
+    	Collection<EntityCoupleableRollingStock.DirectionalStock> train = stock.getDirectionalTrain(false);
 
         LuaTable consist = new LuaTable();
 
-        for (EntityCoupleableRollingStock rollingStock : train) {
+        int i = 1;
+        for (EntityCoupleableRollingStock.DirectionalStock rollingStock : train) {
             LuaTable stockTable = new LuaTable();
 
-            stockTable.set("UUID", LuaValue.valueOf(stock.getUUID().toString()));
-            stockTable.set("coupledFront", LuaValue.valueOf(stock.coupledFront.toString()));
-            stockTable.set("coupledBack", LuaValue.valueOf(stock.coupledBack.toString()));
+            stockTable.set("UUID", LuaValue.valueOf(rollingStock.stock.getUUID().toString()));
+            stockTable.set("stock", ((EntityScriptableRollingStock) rollingStock.stock).getGlobals());
+            stockTable.set("ID", LuaValue.valueOf(rollingStock.stock.getDefinitionID()));
+            stockTable.set("coupledFront", rollingStock.stock.coupledFront != null ? LuaValue.valueOf(rollingStock.stock.coupledFront.toString()) : LuaValue.NIL);
+            stockTable.set("coupledBack", rollingStock.stock.coupledBack != null ? LuaValue.valueOf(rollingStock.stock.coupledBack.toString()) : LuaValue.NIL);
+            stockTable.set("flipped", LuaValue.valueOf(!rollingStock.direction));
 
-            consist.set(rollingStock.getDefinitionID(), stockTable);
+            consist.set(i++, stockTable);
         }
 
         return consist;
