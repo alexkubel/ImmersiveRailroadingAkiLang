@@ -11,7 +11,6 @@ import cam72cam.immersiverailroading.util.RailInfo;
 import cam72cam.mod.MinecraftClient;
 import cam72cam.mod.entity.Player;
 import cam72cam.mod.item.ItemStack;
-import cam72cam.mod.math.Vec3i;
 import cam72cam.mod.render.StandardModel;
 import util.Matrix4;
 
@@ -33,11 +32,7 @@ public class RailBaseModel {
 		StandardModel model = new StandardModel();
 		if (te instanceof TileRail && ((TileRail) te).info != null) {
 			model.addCustom((state, pt) -> {
-				RailInfo info = ((TileRail) te).info;
-                if (info.settings.type == TrackItems.SWITCH) {
-                    //TODO render switch and don't render turn
-                    info = info.withSettings(b -> b.type = TrackItems.STRAIGHT);
-                }
+				RailInfo info = ((TileRail) te).getRenderInfo();
                 if (info.settings.type.isTable()) {
 					ItemStack held = MinecraftClient.getPlayer().getHeldItem(Player.Hand.PRIMARY);
                 	if (held.is(IRItems.ITEM_TRACK_BLUEPRINT) || held.is(IRItems.ITEM_GOLDEN_SPIKE)) {

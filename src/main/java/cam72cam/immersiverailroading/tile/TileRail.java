@@ -26,6 +26,8 @@ import java.util.List;
 public class TileRail extends TileRailBase {
 	@TagField("info")
 	public RailInfo info;
+	private RailInfo cachedRenderInfo;
+	private RailInfo cachedRenderInfoSource;
 
 	@TagField("tableIndex")
 	private int tableIndex;
@@ -34,6 +36,7 @@ public class TileRail extends TileRailBase {
 	private List<ItemStack> drops;
 
 	private IBoundingBox boundingBox;
+	
 	@Override
     public IBoundingBox getRenderBoundingBox() {
 		if (info == null) {
@@ -51,6 +54,17 @@ public class TileRail extends TileRailBase {
 			boundingBox = IBoundingBox.ORIGIN.grow(new Vec3d(length, length, length));
 		}
 		return boundingBox;
+	}
+	
+	public RailInfo getRenderInfo() {
+	    if (info.settings.type != TrackItems.SWITCH) {
+	        return info;
+	    }
+	    if (cachedRenderInfo == null || cachedRenderInfoSource != info) {
+	        cachedRenderInfo = info.withSettings(b -> b.type = TrackItems.STRAIGHT);
+	        cachedRenderInfoSource = info;
+	    }
+	    return cachedRenderInfo;
 	}
 	
 	@Override
