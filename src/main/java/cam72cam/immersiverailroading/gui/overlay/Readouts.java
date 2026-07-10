@@ -5,7 +5,6 @@ import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock.Coupler
 import cam72cam.immersiverailroading.library.unit.PressureDisplayType;
 import cam72cam.immersiverailroading.model.LocomotiveModel;
 import cam72cam.immersiverailroading.model.StockModel;
-import cam72cam.immersiverailroading.util.MathUtil;
 
 public enum Readouts {
     LIQUID,
@@ -46,6 +45,7 @@ public enum Readouts {
     MAGNETIC_BRAKE,
     SANDING,
     SLIPPING,
+    TENDER_FEED,
     ;
 
     public float getValue(EntityRollingStock stock) {
@@ -53,101 +53,98 @@ public enum Readouts {
     }
 
     public float getValue(EntityRollingStock stock, float lever) {
-        switch (this) {
-            case LIQUID:
-                return stock instanceof FreightTank ? ((FreightTank) stock).getPercentLiquidFull() / 100f : 0;
-            case SPEED:
-                double maxSpeed = (stock instanceof Locomotive ? ((Locomotive) stock).getDefinition().getScriptedMaxSpeed(stock.gauge, (Locomotive) stock).metric() : 0);
+        return switch (this) {
+            case LIQUID ->
+                stock instanceof FreightTank tank ? tank.getPercentLiquidFull() / 100f : 0;
+            case SPEED -> {
+                double maxSpeed = (stock instanceof Locomotive loco ? loco.getDefinition().getScriptedMaxSpeed(stock.gauge, loco).metric() : 0);
                 if (maxSpeed == 0) {
                     maxSpeed = 200;
                 }
-                return (float)Math.abs(((EntityMoveableRollingStock)stock).getCurrentSpeed().metric() / maxSpeed);
+                yield stock instanceof EntityMoveableRollingStock moveable ? (float) Math.abs(moveable.getCurrentSpeed().metric() / maxSpeed) : 0;
+            }
             case REAL_SPEED:
-                double maxRealSpeed = (stock instanceof Locomotive ? ((Locomotive) stock).getDefinition().getScriptedMaxSpeed(stock.gauge, (Locomotive) stock).metric() : 0);
+                double maxRealSpeed = (stock instanceof Locomotive loco ? loco.getDefinition().getScriptedMaxSpeed(stock.gauge, loco).metric() : 0);
                 if (maxRealSpeed == 0) {
                     maxRealSpeed = 200;
                 }
-            	return (float)Math.abs(((EntityMoveableRollingStock)stock).getRealSpeed().metric() / maxRealSpeed);
-            case TEMPERATURE:
-                if (stock instanceof LocomotiveSteam) {
-                    return ((LocomotiveSteam) stock).getBoilerTemperature() / 100f;
+                yield stock instanceof EntityMoveableRollingStock moveable ? (float) Math.abs(moveable.getRealSpeed().metric() / maxSpeed) : 0;
+            case TEMPERATURE -> {
+                if (stock instanceof LocomotiveSteam steam) {
+                    yield steam.getBoilerTemperature() / 100f;
                 }
-                if (stock instanceof LocomotiveDiesel) {
-                    return ((LocomotiveDiesel) stock).getEngineTemperature() / 150f;
+                if (stock instanceof LocomotiveDiesel diesel) {
+                    yield diesel.getEngineTemperature() / 150f;
                 }
-                return 0;
-            case BOILER_PRESSURE:
-                return stock instanceof LocomotiveSteam ? ((LocomotiveSteam) stock).getBoilerPressureBar() / (((LocomotiveSteam) stock).getDefinition().getMaxPSI(stock.gauge) * PressureDisplayType.psiToBar) : 0;
-            case THROTTLE:
-                return stock instanceof Locomotive ? ((Locomotive) stock).getThrottle() : 0;
-            case REVERSER:
-                return stock instanceof Locomotive ? (((Locomotive) stock).getReverser() + 1) / 2 : 0;
-            case TRAIN_BRAKE:
-                return stock instanceof Locomotive ? ((Locomotive) stock).getTrainBrakePos() : 0;
-            case TRAIN_BRAKE_LEVER:
-                return stock.getDefinition().isLinearBrakeControl() ? TRAIN_BRAKE.getValue(stock) : lever;
-            case INDEPENDENT_BRAKE:
-                return stock instanceof EntityMoveableRollingStock ? ((EntityMoveableRollingStock) stock).getIndependentBrake() : 0;
-            case BRAKE_PRESSURE:
-                return stock instanceof EntityMoveableRollingStock ? ((EntityMoveableRollingStock) stock).getBrakePressure() : 0;
-            case BRAKE_CYLINDER_PRESSURE:
-                return stock instanceof EntityMoveableRollingStock ?
-                    ((EntityMoveableRollingStock) stock).getBrakeCylinderPressure() : 0;
-            case COUPLER_FRONT:
-                return stock instanceof EntityCoupleableRollingStock ? ((EntityCoupleableRollingStock) stock).isCouplerEngaged(CouplerType.FRONT) ? 1 : 0 : 0;
-            case COUPLER_REAR:
-                return stock instanceof EntityCoupleableRollingStock ? ((EntityCoupleableRollingStock) stock).isCouplerEngaged(CouplerType.BACK) ? 1 : 0 : 0;
-            case COUPLED_FRONT:
-                return stock instanceof EntityCoupleableRollingStock ? ((EntityCoupleableRollingStock) stock).isCoupled(CouplerType.FRONT) && ((EntityCoupleableRollingStock) stock).isCouplerEngaged(CouplerType.FRONT) ? 1 : 0 : 0;
-            case COUPLED_REAR:
-                return stock instanceof EntityCoupleableRollingStock ? ((EntityCoupleableRollingStock) stock).isCoupled(CouplerType.BACK) && ((EntityCoupleableRollingStock) stock).isCouplerEngaged(CouplerType.BACK) ? 1 : 0 : 0;
-            case COUPLER_SLACK_FRONT:
-                return stock instanceof EntityCoupleableRollingStock ? ((EntityCoupleableRollingStock) stock).slackFrontPercent : 0;
-            case COUPLER_SLACK_REAR:
-                return stock instanceof EntityCoupleableRollingStock ? ((EntityCoupleableRollingStock) stock).slackRearPercent : 0;
-            case BELL:
-                return stock instanceof Locomotive ? ((Locomotive) stock).getBell() > 0 ? 1 : 0 : 0;
-            case WHISTLE:
-            case HORN:
-                return stock instanceof Locomotive ? ((Locomotive) stock).hornPull : 0;
-            case ENGINE:
-                return stock instanceof LocomotiveDiesel ? ((LocomotiveDiesel) stock).isTurnedOn() ? 1 : 0 : 0;
-            case FRONT_BOGEY_ANGLE:
-                return yawToPercent(stock.getDefinition().getModel().getFrontYaw((EntityMoveableRollingStock) stock), 90);
-            case REAR_BOGEY_ANGLE:
-                return yawToPercent(stock.getDefinition().getModel().getRearYaw((EntityMoveableRollingStock) stock), 90);
-            case FRONT_LOCOMOTIVE_ANGLE:
-                StockModel<?, ?> front = stock.getDefinition().getModel();
-                return front instanceof LocomotiveModel ? yawToPercent(((LocomotiveModel<?, ?>)front).getFrontLocomotiveYaw((EntityMoveableRollingStock) stock), 90) : 0.5f;
-            case REAR_LOCOMOTIVE_ANGLE:
-                StockModel<?, ?> rear = stock.getDefinition().getModel();
-                return rear instanceof LocomotiveModel ? yawToPercent(((LocomotiveModel<?, ?>)rear).getRearLocomotiveYaw((EntityMoveableRollingStock) stock), 90) : 0.5f;
-            case CYLINDER_DRAIN:
-                return stock instanceof LocomotiveSteam && ((LocomotiveSteam) stock).cylinderDrainsEnabled() ? 1 : 0;
-            case CARGO_FILL:
-                return stock instanceof Freight ? ((Freight) stock).getPercentCargoFull() / 100f : 0;
-            case ENGINE_RPM:
-                return stock instanceof LocomotiveDiesel ? ((LocomotiveDiesel) stock).getRelativeRPM() : 0;
-            case CHEST_PRESSURE:
-                return stock instanceof LocomotiveSteam ? ((LocomotiveSteam) stock).getChestPressurePercent() : 0;
-            case HAND_BRAKE:
-                return stock instanceof EntityMoveableRollingStock ? ((EntityMoveableRollingStock) stock).getHandBrake() : 0;
-            case DYNAMIC_BRAKE:
-                return (float) (stock instanceof LocomotiveDiesel ? ((LocomotiveDiesel) stock).getDynamicBrakeMultiplier() : 0);
-            case ROLLING_STOCK_PITCH:
-                return stock.getRotationPitch();
-            case TRACTIVE_EFFORT:
-                return stock instanceof Locomotive ? ((Locomotive) stock).getCurrentTractiveEffort() : 0;
-            case MAIN_AIR_RESERVOIR:
-                return (float) (stock instanceof Locomotive ? ((Locomotive) stock).getMainAirReservoir() : 0);
-            case MAGNETIC_BRAKE:
-                return stock instanceof EntityMoveableRollingStock && ((EntityMoveableRollingStock) stock).getMagnetBrakeNewton() > 0 ? 1 : 0;
-            case SANDING:
-                return stock instanceof Locomotive && ((Locomotive)stock).isSanding ? 1 : 0;
-            case SLIPPING:
-                return stock instanceof Locomotive && ((Locomotive)stock).slipping ? 1 : 0;
-        }
-        return 0;
+                yield 0;
+            }
+            case BOILER_PRESSURE ->
+                stock instanceof LocomotiveSteam steam ? steam.getBoilerPressureBar() / (steam.getDefinition().getMaxPSI(stock.gauge) * PressureDisplayType.psiToBar) : 0;
+            case THROTTLE ->
+                stock instanceof Locomotive loco ? loco.getThrottle() : 0;
+            case REVERSER ->
+                stock instanceof Locomotive loco ? (loco.getReverser() + 1) / 2 : 0;
+            case TRAIN_BRAKE ->
+                stock instanceof Locomotive loco ? loco.getTrainBrakePos() : 0;
+            case TRAIN_BRAKE_LEVER ->
+                stock.getDefinition().isLinearBrakeControl() ? TRAIN_BRAKE.getValue(stock) : lever;
+            case INDEPENDENT_BRAKE ->
+                stock instanceof EntityMoveableRollingStock moveable ? moveable.getIndependentBrake() : 0;
+            case BRAKE_PRESSURE ->
+                stock instanceof EntityMoveableRollingStock moveable ? moveable.getBrakePressure() : 0;
+            case BRAKE_CYLINDER_PRESSURE -> stock instanceof EntityMoveableRollingStock moveable ? moveable.getBrakeCylinderPressure() : 0;
+            case COUPLER_FRONT ->
+                stock instanceof EntityCoupleableRollingStock coupleable && coupleable.isCouplerEngaged(CouplerType.FRONT) ? 1 : 0;
+            case COUPLER_REAR ->
+                stock instanceof EntityCoupleableRollingStock coupleable && coupleable.isCouplerEngaged(CouplerType.BACK) ? 1 : 0;
+            case COUPLED_FRONT ->
+                stock instanceof EntityCoupleableRollingStock coupleable && coupleable.isCoupled(CouplerType.FRONT) && coupleable.isCouplerEngaged(CouplerType.FRONT) ? 1 : 0;
+            case COUPLED_REAR ->
+                stock instanceof EntityCoupleableRollingStock coupleable && coupleable.isCoupled(CouplerType.BACK) && coupleable.isCouplerEngaged(CouplerType.BACK) ? 1 : 0;
+            case COUPLER_SLACK_FRONT ->
+                stock instanceof EntityCoupleableRollingStock coupleable ? coupleable.slackFrontPercent : 0;
+            case COUPLER_SLACK_REAR ->
+                stock instanceof EntityCoupleableRollingStock coupleable ? coupleable.slackRearPercent : 0;
+            case BELL ->
+                stock instanceof Locomotive loco && loco.getBell() > 0 ? 1 : 0;
+            case WHISTLE, HORN ->
+                stock instanceof Locomotive loco ? loco.hornPull : 0;
+            case ENGINE ->
+                stock instanceof LocomotiveDiesel diesel && diesel.isTurnedOn() ? 1 : 0;
+            case FRONT_BOGEY_ANGLE ->
+                stock instanceof EntityMoveableRollingStock moveable ? yawToPercent(stock.getDefinition().getModel().getFrontYaw(moveable), 90) : 0;
+            case REAR_BOGEY_ANGLE ->
+                stock instanceof EntityMoveableRollingStock moveable ? yawToPercent(stock.getDefinition().getModel().getRearYaw(moveable), 90) : 0;
+            case FRONT_LOCOMOTIVE_ANGLE -> {
+                StockModel<?, ?> stockModel = stock.getDefinition().getModel();
+                yield stockModel instanceof LocomotiveModel<?, ?> locoModel && stock instanceof EntityMoveableRollingStock moveable
+                      ? yawToPercent(locoModel.getFrontLocomotiveYaw(moveable), 90)
+                      : 0.5f;
+            }
+            case REAR_LOCOMOTIVE_ANGLE -> {
+                StockModel<?, ?> stockModel = stock.getDefinition().getModel();
+                yield stockModel instanceof LocomotiveModel<?, ?> locoModel && stock instanceof EntityMoveableRollingStock moveable
+                      ? yawToPercent(locoModel.getRearLocomotiveYaw(moveable), 90)
+                      : 0.5f;
+            }
+            case CYLINDER_DRAIN ->
+                stock instanceof LocomotiveSteam steam && steam.cylinderDrainsEnabled() ? 1 : 0;
+            case CARGO_FILL ->
+                stock instanceof Freight freight ? freight.getPercentCargoFull() / 100f : 0;
+            case ENGINE_RPM ->
+                stock instanceof LocomotiveDiesel diesel ? diesel.getRelativeRPM() : 0;
+            case CHEST_PRESSURE -> stock instanceof LocomotiveSteam steam ? steam.getChestPressurePercent() : 0;
+            case HAND_BRAKE -> stock instanceof EntityMoveableRollingStock moveable ? moveable.getHandBrake() : 0;
+            case DYNAMIC_BRAKE -> stock instanceof LocomotiveDiesel diesel ? diesel.getDynamicBrakeMultiplier() : 0;
+            case ROLLING_STOCK_PITCH -> stock.getRotationPitch();
+            case TRACTIVE_EFFORT -> stock instanceof Locomotive loco ? loco.getCurrentTractiveEffort() : 0;
+            case MAIN_AIR_RESERVOIR -> stock instanceof Locomotive loco ? loco.getMainAirReservoir() : 0;
+            case MAGNETIC_BRAKE -> stock instanceof EntityMoveableRollingStock moveable && moveable.getMagnetBrakeNewton() > 0 ? 1 : 0;
+            case SANDING ? stock instanceof Locomotive loco && loco.isSanding ? 1 : 0;
+            case SLIPPING ? stock instanceof Locomotive loco && loco.slipping ? 1 : 0;
+            case TENDER_FEED ->
+                    stock instanceof LocomotiveSteam steam && steam.isAutoFeedEnabled() ? 1 : 0;
+        };
     }
 
     private float yawToPercent(float yaw, float deltaYaw) {
@@ -165,71 +162,73 @@ public enum Readouts {
     @SuppressWarnings("incomplete-switch")
     public void setValue(EntityRollingStock stock, float value) {
         switch (this) {
-            case THROTTLE:
-                if (stock instanceof Locomotive) {
-                    ((Locomotive) stock).setThrottle(value);
+            case THROTTLE -> {
+                if (stock instanceof Locomotive loco) {
+                    loco.setThrottle(value);
                 }
-                break;
-            case REVERSER:
-                if (stock instanceof Locomotive) {
-                    ((Locomotive) stock).setReverser(value * 2 - 1);
+            }
+            case REVERSER -> {
+                if (stock instanceof Locomotive loco) {
+                    loco.setReverser(value * 2 - 1);
                 }
-                break;
-            case TRAIN_BRAKE:
-                if (stock instanceof Locomotive) {
-                    ((Locomotive) stock).setTrainBrake(value);
+            }
+            case TRAIN_BRAKE -> {
+                if (stock instanceof Locomotive loco) {
+                    loco.setTrainBrake(value);
                 }
-                break;
-            case TRAIN_BRAKE_LEVER:
+            }
+            case TRAIN_BRAKE_LEVER -> {
                 if (stock.getDefinition().isLinearBrakeControl()) {
                     TRAIN_BRAKE.setValue(stock, value);
-                } else {
-                    if (stock instanceof Locomotive) {
-                        // Logic duplicated in Locomotive#onTick
-                        ((Locomotive) stock).setTrainBrake(MathUtil.clamp(((Locomotive) stock).getTrainBrakePos() + (value - 0.5f) / 80, 0, 1));
-                    }
+                } else if (stock instanceof Locomotive loco) {
+                    // Logic duplicated in Locomotive#onTick
+                    loco.setTrainBrake(Math.clamp(loco.getTrainBrakePos() + (value - 0.5f) / 80, 0, 1));
                 }
-                break;
-            case INDEPENDENT_BRAKE:
-                if (stock instanceof Locomotive) {
-                    ((Locomotive) stock).setIndependentBrake(value);
+            }
+            case INDEPENDENT_BRAKE -> {
+                if (stock instanceof EntityMoveableRollingStock moveable) {
+                    moveable.setIndependentBrake(value);
                 }
-                break;
-            case COUPLER_FRONT:
-                if (stock instanceof EntityCoupleableRollingStock) {
-                    ((EntityCoupleableRollingStock) stock).setCouplerEngaged(EntityCoupleableRollingStock.CouplerType.FRONT, value == 0);
+            }
+            case COUPLER_FRONT -> {
+                if (stock instanceof EntityCoupleableRollingStock coupleable) {
+                    coupleable.setCouplerEngaged(CouplerType.FRONT, value == 0);
                 }
-                break;
-            case COUPLER_REAR:
-                if (stock instanceof EntityCoupleableRollingStock) {
-                    ((EntityCoupleableRollingStock) stock).setCouplerEngaged(EntityCoupleableRollingStock.CouplerType.BACK, value == 0);
+            }
+            case COUPLER_REAR -> {
+                if (stock instanceof EntityCoupleableRollingStock coupleable) {
+                    coupleable.setCouplerEngaged(CouplerType.BACK, value == 0);
                 }
-                break;
-            case BELL:
-                if (stock instanceof Locomotive) {
-                    ((Locomotive) stock).setBell((int) (value * 10));
+            }
+            case BELL -> {
+                if (stock instanceof Locomotive loco) {
+                    loco.setBell((int) (value * 10));
                 }
-                break;
-            case WHISTLE:
-            case HORN:
-                if (stock instanceof Locomotive) {
+            }
+            case WHISTLE, HORN -> {
+                if (stock instanceof Locomotive loco) {
                     if (value != 0) {
-                        ((Locomotive) stock).setHorn(10000, value);
+                        loco.setHorn(10000, value);
                     } else {
-                        ((Locomotive) stock).setHorn(10, value);
+                        loco.setHorn(10, value);
                     }
                 }
-                break;
-            case ENGINE:
-                if (stock instanceof LocomotiveDiesel) {
-                    ((LocomotiveDiesel) stock).setTurnedOn(!((LocomotiveDiesel) stock).isTurnedOn());
+            }
+            case ENGINE -> {
+                if (stock instanceof LocomotiveDiesel diesel) {
+                    diesel.setTurnedOn(!diesel.isTurnedOn());
                 }
-                break;
-            case CYLINDER_DRAIN:
-                if (stock instanceof LocomotiveSteam) {
-                    ((LocomotiveSteam)stock).setCylinderDrains(value > 0.9);
+            }
+            case CYLINDER_DRAIN -> {
+                if (stock instanceof LocomotiveSteam steam) {
+                    steam.setCylinderDrains(value > 0.9);
                 }
-                break;
+            }
+            case TENDER_FEED -> {
+                if (stock instanceof LocomotiveSteam steam) {
+                    steam.setAutoFeed(value > 0.9);
+                }
+            }
         }
     }
 }
