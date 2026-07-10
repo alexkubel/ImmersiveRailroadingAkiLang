@@ -166,28 +166,26 @@ public abstract class EntityCoupleableRollingStock extends EntityMoveableRolling
 			// Only couple server side
 			return;
 		}
-        for (Control<?> control : getDefinition().getModel().getControls(ModelComponentType.COUPLER_ENGAGED_X)) {
-            if (control.part.pos.contains(ModelPosition.FRONT)) {
-                if (isCouplerEngaged(CouplerType.FRONT) ^ (getControlPosition(control) < 0.5)) {
-                    setCouplerEngaged(CouplerType.FRONT, getControlPosition(control) < 0.5);
-                }
-            }
-            if (control.part.pos.contains(ModelPosition.REAR)) {
-                if (isCouplerEngaged(CouplerType.BACK) ^ (getControlPosition(control) < 0.5)) {
-                    setCouplerEngaged(CouplerType.BACK, getControlPosition(control) < 0.5);
-                }
-            }
-        }
 
 		if (this.getTickCount() % 5 == 0) {
-			hasElectricalPower = false;
-			linkedToLocomotive = false;
-			this.mapTrain(this, false, stock -> {
-							  hasElectricalPower = hasElectricalPower ||
-									  stock instanceof Locomotive && ((Locomotive) stock).providesElectricalPower();
-							  linkedToLocomotive = linkedToLocomotive || stock instanceof Locomotive;
-						  }
-			);
+			for (Control<?> control : getDefinition().getModel().getControls(ModelComponentType.COUPLER_ENGAGED_X)) {
+	            if (control.part.pos.contains(ModelPosition.FRONT)) {
+	                if (isCouplerEngaged(CouplerType.FRONT) ^ (getControlPosition(control) < 0.5)) {
+	                    setCouplerEngaged(CouplerType.FRONT, getControlPosition(control) < 0.5);
+	                }
+	            }
+	            if (control.part.pos.contains(ModelPosition.REAR)) {
+	                if (isCouplerEngaged(CouplerType.BACK) ^ (getControlPosition(control) < 0.5)) {
+	                    setCouplerEngaged(CouplerType.BACK, getControlPosition(control) < 0.5);
+	                }
+	            }
+	        }
+			
+			if (consist != null)  {
+			    consist.refreshPowerInfo(world, this.getTickCount() / 5);
+			    hasElectricalPower = consist.hasElectricalPower();
+			    linkedToLocomotive = consist.linkedToLocomotive();
+			}
 		}
 
 		hadElectricalPower = hasElectricalPower();

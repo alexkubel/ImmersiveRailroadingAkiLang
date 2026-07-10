@@ -256,7 +256,7 @@ public class SimulationState {
 
         calculateCouplerPositions();
 
-        calculateBlockCollisions(Collections.emptyList());
+        calculateBlockCollisions(Collections.emptySet());
         blocksToBreak = Collections.emptyList();
 
         consist = stock.consist;
@@ -325,7 +325,7 @@ public class SimulationState {
         }
     }
 
-    public void calculateBlockCollisions(List<Vec3i> blocksAlreadyBroken) {
+    public void calculateBlockCollisions(Set<Vec3i> blocksAlreadyBroken) {
         this.collidingBlocks = config.world.blocksInBounds(this.bounds);
         this.trackToUpdate = new ArrayList<>();
         this.interferingBlocks = new ArrayList<>();
@@ -357,7 +357,7 @@ public class SimulationState {
         return next;
     }
 
-    public SimulationState next(double distance, List<Vec3i> blocksAlreadyBroken) {
+    public SimulationState next(double distance, Set<Vec3i> blocksAlreadyBroken) {
         SimulationState next = new SimulationState(this);
         next.moveAlongTrack(distance);
         if (this.position.equals(next.position)) {

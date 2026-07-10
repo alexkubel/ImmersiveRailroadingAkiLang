@@ -44,3 +44,4 @@ src/main/resources/META-INF/neoforge.mods.toml
 src/main/resources/META-INF/mods.toml
 src/main/resources/pack.mcmeta
 /bin/
+benchmarks/

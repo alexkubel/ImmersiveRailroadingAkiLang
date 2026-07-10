@@ -96,6 +96,8 @@ public abstract class EntityRollingStockDefinition {
     private final EnumMap<ModelComponentType, List<ModelComponent>> renderComponents;
     private final List<ItemComponentType> itemComponents;
     private final Function<EntityBuildableRollingStock, float[][]> heightmap;
+    private float[] heightmapRawCache;
+    private TagCompound heightmapMetaCache;
     private final Map<String, LightDefinition> lights = new HashMap<>();
     protected final Map<String, ControlSoundsDefinition> controlSounds = new HashMap<>();
     public Identifier smokeParticleTexture;
@@ -328,6 +330,8 @@ public abstract class EntityRollingStockDefinition {
                     sound.stop();
                 }
             }
+            lastMoveSoundValue.remove(stock.getUUID());
+            wasSoundPressed.remove(stock.getUUID());
         }
     }
 
@@ -816,8 +820,14 @@ public abstract class EntityRollingStockDefinition {
 
             return (stock) -> {
                 try {
-                    float[] raw = data.get().floats();
-                    TagCompound tc = new TagCompound(meta.get().bytes());
+                    if (heightmapRawCache == null) {
+                        heightmapRawCache = data.get().floats();
+                    }
+                    if (heightmapMetaCache == null) {
+                        heightmapMetaCache = new TagCompound(meta.get().bytes());
+                    }
+                    float[] raw = heightmapRawCache;
+                    TagCompound tc = heightmapMetaCache;
 
                     int xRes = tc.getInteger("xRes");
                     int zRes = tc.getInteger("zRes");

@@ -5,6 +5,7 @@ import cam72cam.immersiverailroading.library.*;
 import cam72cam.mod.item.ItemStack;
 import cam72cam.mod.serialization.*;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 @TagMapped(RailSettings.Mapper.class)
@@ -69,6 +70,35 @@ public class RailSettings {
         Mutable mutable = mutable();
         mod.accept(mutable);
         return mutable.immutable();
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RailSettings)) return false;
+        RailSettings other = (RailSettings) o;
+        return length == other.length
+                && Float.compare(degrees, other.degrees) == 0
+                && Float.compare(curvosity, other.curvosity) == 0
+                && isPreview == other.isPreview
+                && isGradeCrossing == other.isGradeCrossing
+                && transfertableEntryCount == other.transfertableEntryCount
+                && transfertableEntrySpacing == other.transfertableEntrySpacing
+                && gauge.equals(other.gauge)
+                && type == other.type
+                && posType == other.posType
+                && smoothing == other.smoothing
+                && direction == other.direction
+                && railBed.equals(other.railBed)
+                && railBedFill.equals(other.railBedFill)
+                && track.equals(other.track);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(gauge, track, type, length, degrees, curvosity,
+                posType, smoothing, direction, railBed, railBedFill,
+                isPreview, isGradeCrossing, transfertableEntryCount, transfertableEntrySpacing);
     }
 
     private static class DegreesMapper implements TagMapper<Float> {

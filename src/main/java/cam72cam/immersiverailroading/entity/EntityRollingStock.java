@@ -52,6 +52,8 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 			.rotate(Math.toRadians(-90), 0, 1, 0)
 			.scale(this.gauge.scale(), this.gauge.scale(), this.gauge.scale())
 	);
+	
+	private EntityRollingStockDefinition cachedDefinition;
 
 	public void setup(EntityRollingStockDefinition def, Gauge gauge, String texture) {
 		this.defID = def.defID;
@@ -98,13 +100,16 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 	}
 	@SuppressWarnings("unchecked")
     public <T extends EntityRollingStockDefinition> T getDefinition(Class<T> type) {
-		EntityRollingStockDefinition def = DefinitionManager.getDefinition(defID);
-		if (def == null) {
-			// This should not be hit, entity should be removed handled by tryJoinWorld
-			throw new RuntimeException(String.format("Definition %s has been removed!  This stock will not function!", defID));
-		}
-		return (T) def;
+		if (cachedDefinition == null) {
+            cachedDefinition = DefinitionManager.getDefinition(defID);
+            if (cachedDefinition == null) {
+            	// This should not be hit, entity should be removed handled by tryJoinWorld
+                throw new RuntimeException(String.format("Definition %s has been removed! This stock will not function!", defID));
+            }
+        }
+        return (T) cachedDefinition;
 	}
+	
 	public String getDefinitionID() {
 		return this.defID;
 	}

@@ -2,11 +2,14 @@ package cam72cam.immersiverailroading.entity.physics;
 
 import cam72cam.immersiverailroading.Config.ImmersionConfig;
 import cam72cam.immersiverailroading.ImmersiveRailroading;
+import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock;
+import cam72cam.immersiverailroading.entity.Locomotive;
 import cam72cam.immersiverailroading.util.Speed;
 import cam72cam.mod.math.Vec3d;
 import cam72cam.mod.math.Vec3i;
 import cam72cam.mod.serialization.TagCompound;
 import cam72cam.mod.serialization.TagField;
+import cam72cam.mod.world.World;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,6 +25,9 @@ import java.util.stream.Collectors;
 public class Consist {
     static boolean debug = false;
     private static int trainLength;
+    private transient long powerInfoTick = -1;
+    private transient boolean hasElectricalPowerCached;
+    private transient boolean linkedToLocomotiveCached;
 
     public static class Particle {
         public SimulationState state;
@@ -217,7 +223,7 @@ public class Consist {
 
 
 
-        public SimulationState applyToState(List<Vec3i> blocksAlreadyBroken) {
+        public SimulationState applyToState(Set<Vec3i> blocksAlreadyBroken) {
             double velocityMPT = Speed.fromMetric(this.velocity_M_S * 3.6).minecraft(); // per 1 tick
 
             // Calculate the applied velocity from this particle.  This should not include the coupler adjustment speed/distance below
@@ -388,7 +394,7 @@ public class Consist {
         }
     }
 
-    public static void iterate(Map<UUID, SimulationState> states, Map<UUID, SimulationState> nextStateMap, List<Vec3i> blocksAlreadyBroken) {
+    public static void iterate(Map<UUID, SimulationState> states, Map<UUID, SimulationState> nextStateMap, Set<Vec3i> blocksAlreadyBroken) {
         debug = false;
         // ordered
         List<Particle> particles = new ArrayList<>();
@@ -653,6 +659,27 @@ public class Consist {
         this.ids = consistIDs;
         this.positions = consistPositions;
     }
+    
+    public void refreshPowerInfo(World world, long tickBucket) {
+        if (powerInfoTick == tickBucket) {
+            return;
+        }
+        powerInfoTick = tickBucket;
+        hasElectricalPowerCached = false;
+        linkedToLocomotiveCached = false;
+        for (UUID id : ids) {
+            EntityCoupleableRollingStock stock = world.getEntity(id, EntityCoupleableRollingStock.class);
+            if (stock instanceof Locomotive loco) {
+                linkedToLocomotiveCached = true;
+                if (loco.providesElectricalPower()) {
+                    hasElectricalPowerCached = true;
+                }
+            }
+        }
+    }
+
+    public boolean hasElectricalPower() { return hasElectricalPowerCached; }
+    public boolean linkedToLocomotive() { return linkedToLocomotiveCached; }
 
     public static class TagMapper implements cam72cam.mod.serialization.TagMapper<Consist> {
         @Override
