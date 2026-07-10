@@ -225,10 +225,7 @@ public class LocomotiveSteam extends Locomotive {
 		super.setup(def, gauge, texture);
 		if (def instanceof LocomotiveSteamDefinition steamDef && steamDef.defaultTenderFeed) {
 			//Apply default tender feed setting
-			steamDef.getModel().getControls()
-					.stream()
-					.filter(x -> x.part.type == ModelComponentType.TENDER_FEED_CONTROL_X)
-					.forEach(c -> setControlPosition(c, 1));
+			steamDef.getModel().getControls(ModelComponentType.TENDER_FEED_CONTROL_X).forEach(c -> setControlPosition(c, 1));
 		}
 	}
 
@@ -515,12 +512,10 @@ public class LocomotiveSteam extends Locomotive {
 
 	public boolean isAutoFeedEnabled() {
 		// This could be optimized to once-per-tick, but I'm not sure that is necessary
-		List<Control<?>> autoRefuel = getDefinition().getModel().getControls()
-												 .stream()
-												 .filter(x -> x.part.type == ModelComponentType.TENDER_FEED_CONTROL_X)
-												 .collect(Collectors.toList());
+		List<?> autoRefuel = getDefinition().getModel().getControls(ModelComponentType.TENDER_FEED_CONTROL_X);
+												 
 		if (!autoRefuel.isEmpty()) {
-			return autoRefuel.stream().anyMatch(c -> getControlPosition(c) == 1);
+			return autoRefuel.stream().anyMatch(c -> getControlPosition((Control<?>) c) == 1);
 		} else {
 			return getDefinition().defaultTenderFeed;
 		}
@@ -528,13 +523,10 @@ public class LocomotiveSteam extends Locomotive {
 
 	public void setAutoFeed(boolean enabled) {
 		// This could be optimized to once-per-tick, but I'm not sure that is necessary
-		List<Control<?>> autoRefuel = getDefinition().getModel().getControls()
-												 .stream()
-												 .filter(x -> x.part.type == ModelComponentType.TENDER_FEED_CONTROL_X)
-												 .collect(Collectors.toList());
+		List<?> autoRefuel = getDefinition().getModel().getControls(ModelComponentType.TENDER_FEED_CONTROL_X);
 
-		for (Control<?> ctrl : autoRefuel) {
-			setControlPosition(ctrl, enabled ? 1 : 0);
+		for (Object ctrl : autoRefuel) {
+			setControlPosition((Control<?>) ctrl, enabled ? 1 : 0);
 		}
 	}
 }

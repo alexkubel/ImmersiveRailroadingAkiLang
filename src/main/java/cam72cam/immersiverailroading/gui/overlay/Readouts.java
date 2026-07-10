@@ -63,12 +63,13 @@ public enum Readouts {
                 }
                 yield stock instanceof EntityMoveableRollingStock moveable ? (float) Math.abs(moveable.getCurrentSpeed().metric() / maxSpeed) : 0;
             }
-            case REAL_SPEED:
+            case REAL_SPEED -> {
                 double maxRealSpeed = (stock instanceof Locomotive loco ? loco.getDefinition().getScriptedMaxSpeed(stock.gauge, loco).metric() : 0);
                 if (maxRealSpeed == 0) {
                     maxRealSpeed = 200;
                 }
-                yield stock instanceof EntityMoveableRollingStock moveable ? (float) Math.abs(moveable.getRealSpeed().metric() / maxSpeed) : 0;
+                yield stock instanceof EntityMoveableRollingStock moveable ? (float) Math.abs(moveable.getRealSpeed().metric() / maxRealSpeed) : 0;
+            }
             case TEMPERATURE -> {
                 if (stock instanceof LocomotiveSteam steam) {
                     yield steam.getBoilerTemperature() / 100f;
@@ -135,13 +136,13 @@ public enum Readouts {
                 stock instanceof LocomotiveDiesel diesel ? diesel.getRelativeRPM() : 0;
             case CHEST_PRESSURE -> stock instanceof LocomotiveSteam steam ? steam.getChestPressurePercent() : 0;
             case HAND_BRAKE -> stock instanceof EntityMoveableRollingStock moveable ? moveable.getHandBrake() : 0;
-            case DYNAMIC_BRAKE -> stock instanceof LocomotiveDiesel diesel ? diesel.getDynamicBrakeMultiplier() : 0;
+            case DYNAMIC_BRAKE -> stock instanceof LocomotiveDiesel diesel ? (float) diesel.getDynamicBrakeMultiplier() : 0;
             case ROLLING_STOCK_PITCH -> stock.getRotationPitch();
             case TRACTIVE_EFFORT -> stock instanceof Locomotive loco ? loco.getCurrentTractiveEffort() : 0;
             case MAIN_AIR_RESERVOIR -> stock instanceof Locomotive loco ? loco.getMainAirReservoir() : 0;
             case MAGNETIC_BRAKE -> stock instanceof EntityMoveableRollingStock moveable && moveable.getMagnetBrakeNewton() > 0 ? 1 : 0;
-            case SANDING ? stock instanceof Locomotive loco && loco.isSanding ? 1 : 0;
-            case SLIPPING ? stock instanceof Locomotive loco && loco.slipping ? 1 : 0;
+            case SANDING -> stock instanceof Locomotive loco && loco.isSanding ? 1 : 0;
+            case SLIPPING -> stock instanceof Locomotive loco && loco.slipping ? 1 : 0;
             case TENDER_FEED ->
                     stock instanceof LocomotiveSteam steam && steam.isAutoFeedEnabled() ? 1 : 0;
         };
