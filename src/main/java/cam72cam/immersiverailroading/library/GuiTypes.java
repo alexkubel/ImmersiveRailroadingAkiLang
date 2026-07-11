@@ -1,7 +1,5 @@
 package cam72cam.immersiverailroading.library;
 
-import java.io.ObjectInputFilter.Config;
-
 import cam72cam.immersiverailroading.*;
 import cam72cam.immersiverailroading.entity.*;
 import cam72cam.immersiverailroading.gui.*;
