@@ -163,9 +163,8 @@ public class SimulationState {
 
             this.massKg = stock.getWeight();
 
-            if (stock instanceof Locomotive) {
-                trainBrakePosition = ((Locomotive) stock).getTrainBrakePos();
-                Locomotive locomotive = (Locomotive) stock;
+            if (stock instanceof Locomotive locomotive) {
+                trainBrakePosition = locomotive.getTrainBrakePos();
                 tractiveEffortNewtons = locomotive::getTractiveEffortNewtons;
                 tractiveEffortFactors = locomotive.getThrottle() + (locomotive.getReverser() * 10);
                 desiredBrakePressure = Math.min(locomotive.getMainAirReservoir() * 2 ,Config.ImmersionConfig.brakeMode.equals(BrakeMode.DEFAULT) ?
@@ -557,9 +556,6 @@ public class SimulationState {
         brakeCylinderNewtons *= Config.ConfigBalance.brakeMultiplier;
         dynamicBrakeNewtons *= Config.ConfigBalance.brakeMultiplier;
         magnetBrakeNewtons *= Config.ConfigBalance.brakeMultiplier;
-        
-        if (config.trainBrakePressure > 0.9999)
-            config.trainBrakePressure = 1;
 
         if (ConfigDebug.debugLogging) {
         	System.out.println("Stock: " + config.debugID);
