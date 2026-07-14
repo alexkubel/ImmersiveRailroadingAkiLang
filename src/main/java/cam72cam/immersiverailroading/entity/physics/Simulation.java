@@ -29,7 +29,7 @@ public class Simulation {
     private final World world;
     private final int startTickID;
     List<Map<UUID, SimulationState>> stateMaps;
-    private final List<Vec3i> blocksAlreadyBroken;
+    private final Set<Vec3i> blocksAlreadyBroken;
     List<EntityCoupleableRollingStock> loaded;
 
 
@@ -40,7 +40,7 @@ public class Simulation {
         this.startTickID = ((ServerChronoState)ChronoState.getState(world)).getServerTickID();
 
         stateMaps = new ArrayList<>();
-        blocksAlreadyBroken = new ArrayList<>();
+        blocksAlreadyBroken = new HashSet<>();
 
         for (int i = 0; i < Config.ConfigDebug.physicsFutureTicks; i++) {
             stateMaps.add(new HashMap<>());
@@ -383,5 +383,9 @@ public class Simulation {
         }
 
         new Simulation(world);
+    }
+
+    public static double calculateRoll(double frontRoll, double rearRoll) {//TODO: multi bogey support?
+        return (frontRoll + rearRoll) / 2;
     }
 }

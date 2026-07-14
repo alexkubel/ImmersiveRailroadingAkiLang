@@ -82,6 +82,23 @@ public class RealBB implements IBoundingBox {
         this.center = new Vec3d(centerX, centerY, centerZ);
 		this.max = new Vec3d(xMax + centerX, centerY + height, zMax + centerZ);
 	}
+	
+	private RealBB(double front, double rear, double width, double height, float yaw,
+            double centerX, double centerY, double centerZ, float[][] heightMap,
+            Vec3d min, Vec3d center, Vec3d max) {
+		this.front = front;
+		this.rear = rear;
+		this.width = width;
+		this.height = height;
+		this.yaw = yaw;
+		this.centerX = centerX;
+		this.centerY = centerY;
+		this.centerZ = centerZ;
+		this.heightMap = heightMap;
+		this.min = min;
+		this.center = center;
+		this.max = max;
+	}
 
 	@Override
 	public Vec3d min() {
@@ -100,7 +117,8 @@ public class RealBB implements IBoundingBox {
 
 	@Override
 	public RealBB clone() {
-		return new RealBB(front, rear, width, height, yaw, centerX, centerY, centerZ, heightMap);
+		return new RealBB(front, rear, width, height, yaw, centerX, centerY, centerZ, heightMap,
+                this.min, this.center, this.max);
 	}
 	@Override
 	public RealBB contract(Vec3d val) {
@@ -160,7 +178,7 @@ public class RealBB implements IBoundingBox {
 
 	@Override
 	public RealBB offset(Vec3d val) {
-		return new RealBB(front, rear, width, height, yaw, centerX+val.x, centerY+val.y, centerZ+val.z, heightMap);
+		return new RealBB(front, rear, width, height, yaw, centerX+val.x, centerY+val.y, centerZ+val.z, heightMap, this.min.add(val), this.center.add(val), this.max.add(val));
 	}
 	
 	@Override

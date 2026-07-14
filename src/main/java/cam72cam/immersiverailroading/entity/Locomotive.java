@@ -85,6 +85,7 @@ public abstract class Locomotive extends FreightTank{
 	@TagSync
     @TagField("slipping")
     public boolean slipping = false;
+	private double cachedWheelSlipDelta = 0;
 	
     @TagSync
     @TagField("sanding")
@@ -285,7 +286,7 @@ public abstract class Locomotive extends FreightTank{
             emergencyBrake = false;
 			break;
 		case DEAD_MANS_SWITCH:
-			if (deadManChangeTimeout == 0) { 
+			if (deadManChangeTimeout == 0 && getWorld().isServer) {
 				deadMansSwitch = !deadMansSwitch;
 				if (deadMansSwitch) {
 					source.sendMessage(ChatText.DEADMANS_SWITCH_ENABLED.getMessage());
@@ -496,9 +497,12 @@ public abstract class Locomotive extends FreightTank{
 		        brakeCooldown--;
 		    }
 			
-			if (deadMansSwitch && !getCurrentSpeed().isZero()) {
-				boolean hasDriver = this.getPassengers().stream().anyMatch(Entity::isPlayer);
-				if (!hasDriver) {
+			if (deadMansSwitch && !this.getCurrentSpeed().isZero()) {
+				boolean hasDriverOnTrain = getTrain().stream()
+											 .filter(t -> t instanceof Locomotive || t instanceof Tender)
+											 .flatMap(t -> t.getPassengers().stream())
+											 .anyMatch(Entity::isPlayer);
+				if (!hasDriverOnTrain) {
 					this.setThrottle(0);
 					this.setTrainBrake(1);
 				}
@@ -546,17 +550,12 @@ public abstract class Locomotive extends FreightTank{
             if (!providesElectricalPower() && getTrainBrakePos() == 1 && getMainAirReservoir() > 0) {
                 mainAirReservoir(-0.001f);
             }
-		}
-
-        this.distanceTraveled += simulateWheelSlip();
-        
-        isSanding = (sandingKey || isSandingWidgetActive()) && !(this instanceof HandCar);
-        if (sandingKeyTimeout > 0) {
-            sandingKeyTimeout--;
-        }
-        
-        if (getWorld().isClient) {
-            if (isSanding) {
+            
+            if (getTickCount() % 5 == 0) {
+            	isSanding = (sandingKey || isSandingWidgetActive()) && !(this instanceof HandCar);
+            }
+		} else {
+			if (isSanding) {
                 ItemStack stack = this.cargoItems.get(2);
                 if (sandTime == 0) {
                     stack.setCount(stack.getCount() - 1);
@@ -570,6 +569,13 @@ public abstract class Locomotive extends FreightTank{
             if (getTickCount() % 10 == 0) {
                 trainBrakeDelta();
             }
+		}
+		
+		cachedWheelSlipDelta = simulateWheelSlip();
+        this.distanceTraveled += getWheelSlipDelta();
+        
+        if (sandingKeyTimeout > 0) {
+            sandingKeyTimeout--;
         }
 	}
     
@@ -584,7 +590,7 @@ public abstract class Locomotive extends FreightTank{
 	@Override
 	public Speed getCurrentSpeed() {
 	    return slipping ? Speed.fromMinecraft((super.getCurrentSpeed().minecraft()
-	            + simulateWheelSlip())) : super.getCurrentSpeed();
+	            + getWheelSlipDelta())) : super.getCurrentSpeed();
 	}
 	
 	@Override
@@ -596,7 +602,7 @@ public abstract class Locomotive extends FreightTank{
 	public abstract double getAppliedTractiveEffort(Speed speed);
 
 	/** Maximum force that can be between the wheels and the rails before it slips */
-    protected final double getStaticTractiveEffort() {        
+    protected final double getStaticTractiveEffort() {
         return getDefinition().getScriptedStartingTractionNewtons(gauge, this)
                 * Config.ConfigBalance.tractionMultiplier * adhesionCoefficient();
     }
@@ -620,6 +626,10 @@ public abstract class Locomotive extends FreightTank{
         
         double adhesionFactor = appliedTractiveEffort / staticTractiveEffort;
         return Math.copySign((adhesionFactor) / 5, getReverser());
+    }
+    
+    public double getWheelSlipDelta() {
+    	return cachedWheelSlipDelta;
     }
 	
     public double getTractiveEffortNewtons(Speed speed) {

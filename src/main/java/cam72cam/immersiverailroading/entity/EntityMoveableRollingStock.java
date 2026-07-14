@@ -36,6 +36,10 @@ public abstract class EntityMoveableRollingStock extends EntityCustomPlayerMovem
     private Float frontYaw;
     @TagField("rearYaw")
     private Float rearYaw;
+    @TagField("frontRoll")
+    private Float frontRoll;
+    @TagField("rearRoll")
+    private Float rearRoll;
     @TagField("distanceTraveled")
     public double distanceTraveled = 0;
     public double distanceTraveledReal = 0;
@@ -89,6 +93,12 @@ public abstract class EntityMoveableRollingStock extends EntityCustomPlayerMovem
         }
         if (rearYaw == null) {
             rearYaw = getRotationYaw();
+        }
+        if (frontRoll == null) {
+            frontRoll = getRotationRoll();
+        }
+        if (rearRoll == null) {
+            rearRoll = getRotationRoll();
         }
     }
 
@@ -340,9 +350,12 @@ public abstract class EntityMoveableRollingStock extends EntityCustomPlayerMovem
         double prevPosZ = prevPos.z;
 
         this.setRotationYaw(currentPos.rotationYaw);
+        this.setRotationRoll(currentPos.rotationRoll);
         this.setRotationPitch(currentPos.rotationPitch);
         this.frontYaw = currentPos.frontYaw;
         this.rearYaw = currentPos.rearYaw;
+        this.frontRoll = currentPos.frontRoll;
+        this.rearRoll = currentPos.rearRoll;
 
         this.currentSpeed = currentPos.speed;
 
@@ -468,6 +481,25 @@ public abstract class EntityMoveableRollingStock extends EntityCustomPlayerMovem
 
     public void setRearYaw(float rearYaw) {
         this.rearYaw = rearYaw;
+    }
+
+    public float getFrontRoll() {
+        if(this.frontRoll != null) {
+            return this.frontRoll;
+        }
+        return this.getRotationRoll();//This seems will only happen in some case when spawning train on MinecraftRail?
+    }
+    public void setFrontRoll(float val) {
+        this.frontRoll = val;
+    }
+    public float getRearRoll() {
+        if(this.rearRoll != null) {
+            return this.rearRoll;
+        }
+        return this.getRotationRoll();
+    }
+    public void setRearRoll(float val) {
+        this.rearRoll = val;
     }
 
     public float getTickSkew() {

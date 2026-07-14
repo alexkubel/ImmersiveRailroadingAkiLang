@@ -2,9 +2,11 @@ package cam72cam.immersiverailroading.items.nbt;
 
 import cam72cam.immersiverailroading.ImmersiveRailroading;
 import cam72cam.immersiverailroading.library.*;
+import cam72cam.immersiverailroading.util.RollAndOffsetInfo;
 import cam72cam.mod.item.ItemStack;
 import cam72cam.mod.serialization.*;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 @TagMapped(RailSettings.Mapper.class)
@@ -14,6 +16,10 @@ public class RailSettings {
     public final int length;
     public final float degrees;
     public final float curvosity;
+    // Info of this segment
+    public final RollAndOffsetInfo rollAndOffsetInfo;
+    // Full info when picking items
+    public final RollAndOffsetInfo pickRollAndOffsetInfo;
     public final TrackPositionType posType;
     public final TrackSmoothing smoothing;
     public final TrackDirection direction;
@@ -25,7 +31,7 @@ public class RailSettings {
     public final int transfertableEntryCount;
     public final int transfertableEntrySpacing;
 
-    public RailSettings(Gauge gauge, String track, TrackItems type, int length, float degrees, float curvosity, TrackPositionType posType, TrackSmoothing smoothing, TrackDirection direction, ItemStack railBed, ItemStack railBedFill, boolean isPreview, boolean isGradeCrossing, int count, int spacing) {
+    public RailSettings(Gauge gauge, String track, TrackItems type, int length, float degrees, float curvosity, TrackPositionType posType, TrackSmoothing smoothing, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo, TrackDirection direction, ItemStack railBed, ItemStack railBedFill, boolean isPreview, boolean isGradeCrossing, int count, int spacing) {
         this.gauge = gauge;
         this.track = track;
         this.type = type;
@@ -33,6 +39,8 @@ public class RailSettings {
         this.degrees = degrees;
         this.posType = posType;
         this.smoothing = smoothing;
+        this.rollAndOffsetInfo = rollAndOffsetInfo;
+        this.pickRollAndOffsetInfo = pickRollAndOffsetInfo;
         this.direction = direction;
         this.railBed = railBed;
         this.railBedFill = railBedFill;
@@ -69,6 +77,35 @@ public class RailSettings {
         Mutable mutable = mutable();
         mod.accept(mutable);
         return mutable.immutable();
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RailSettings)) return false;
+        RailSettings other = (RailSettings) o;
+        return length == other.length
+                && Float.compare(degrees, other.degrees) == 0
+                && Float.compare(curvosity, other.curvosity) == 0
+                && isPreview == other.isPreview
+                && isGradeCrossing == other.isGradeCrossing
+                && transfertableEntryCount == other.transfertableEntryCount
+                && transfertableEntrySpacing == other.transfertableEntrySpacing
+                && gauge.equals(other.gauge)
+                && type == other.type
+                && posType == other.posType
+                && smoothing == other.smoothing
+                && direction == other.direction
+                && railBed.equals(other.railBed)
+                && railBedFill.equals(other.railBedFill)
+                && track.equals(other.track);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(gauge, track, type, length, degrees, curvosity,
+                posType, smoothing, direction, railBed, railBedFill,
+                isPreview, isGradeCrossing, transfertableEntryCount, transfertableEntrySpacing);
     }
 
     private static class DegreesMapper implements TagMapper<Float> {
@@ -136,6 +173,11 @@ public class RailSettings {
         @TagField("track")
         public String track;
 
+        @TagField("rollAndOffsetInfo")
+        public RollAndOffsetInfo rollAndOffsetInfo;
+        @TagField("pickRollAndOffsetInfo")
+        public RollAndOffsetInfo pickRollAndOffsetInfo;
+
         @TagField("transfertableEntryCount")
         public int transfertableEntryCount;
         @TagField("transfertableEntrySpacing")
@@ -144,6 +186,10 @@ public class RailSettings {
         private Mutable(RailSettings settings) {
             this.gauge = settings.gauge;
             this.track = settings.track;
+
+            rollAndOffsetInfo = settings.rollAndOffsetInfo;
+            pickRollAndOffsetInfo = settings.pickRollAndOffsetInfo;
+
             this.type = settings.type;
             this.length = settings.length;
             this.degrees = settings.degrees;
@@ -164,6 +210,9 @@ public class RailSettings {
             gauge = Gauge.from(Gauge.STANDARD);
             type = TrackItems.STRAIGHT;
             track = "default";
+            rollAndOffsetInfo = null;
+            pickRollAndOffsetInfo = rollAndOffsetInfo;
+
             length = 10;
             degrees = 90;
             posType = TrackPositionType.FIXED;
@@ -190,6 +239,8 @@ public class RailSettings {
                     curvosity,
                     posType,
                     smoothing,
+                    rollAndOffsetInfo,
+                    pickRollAndOffsetInfo,
                     direction,
                     railBed,
                     railBedFill,
