@@ -24,8 +24,6 @@ import org.luaj.vm2.LuaValue;
 
 import java.util.*;
 
-import javax.annotation.Nullable;
-
 public class IRModule implements LuaModule {
     private final EntityScriptableRollingStock stock;
 
