@@ -46,7 +46,6 @@ import cam72cam.mod.world.World;
 import org.apache.commons.lang3.ArrayUtils;
 import org.luaj.vm2.LuaValue;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -247,7 +246,7 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 		return this.augmentFilterID != null;
 	}
 
-	public void setAugmentProperties(@Nonnull Augment.Properties properties) {
+	public void setAugmentProperties(Augment.Properties properties) {
 		this.positive = properties.positiveFilter;
 		this.negative = properties.negativeFilter;
 		this.actuatorFilter = properties.doorActuatorFilter;
@@ -462,9 +461,7 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 	        return null;
 	    }
 	    
-	    if (parentTileCache != null 
-	            && currentParent.equals(parentTileCacheKey) 
-	            && !parentTileCache.internal.isInvalid()) {
+	    if (parentTileCache != null && currentParent.equals(parentTileCacheKey)) {
 	        return parentTileCache;
 	    }
 	    
