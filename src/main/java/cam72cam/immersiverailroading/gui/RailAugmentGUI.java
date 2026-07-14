@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-import javax.annotation.Nullable;
-
 import static cam72cam.immersiverailroading.gui.ClickListHelper.next;
 
 public class RailAugmentGUI implements IScreen {
@@ -360,12 +358,12 @@ public class RailAugmentGUI implements IScreen {
             this.script = script;
         }
 
-        public ScriptDef setAdditional(@Nullable List<String> additional) {
+        public ScriptDef setAdditional(List<String> additional) {
             this.additional = additional;
             return this;
         }
 
-        public ScriptDef setDesc(@Nullable String desc) {
+        public ScriptDef setDesc(String desc) {
             this.desc = desc;
             return this;
         }

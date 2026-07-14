@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
 
 public class EntityRollingStock extends CustomEntity implements ITickable, IClickable, IKillable {
 	@TagField("defID")
@@ -337,7 +336,7 @@ public class EntityRollingStock extends CustomEntity implements ITickable, IClic
 		return getControlData(control).getRight();
 	}
 	
-	public void setControlPosition(@Nullable Control<?> control, String controlGroup, float val) {
+	public void setControlPosition(Control<?> control, String controlGroup, float val) {
 	    val = MathUtil.clamp(val, 0, 1);
 	    Pair<Boolean, Float> newPair = control != null ? Pair.of(getControlPressed(control), val) : Pair.of(false, val);
 	    Pair<Boolean, Float> oldPair = controlPositions.put(controlGroup, newPair);
