@@ -469,6 +469,10 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 	        return parentTileCache;
 	    }
 	    
+	    if (!getWorld().isBlockLoaded(currentParent)) {
+	        return null;
+	    }
+	    
 	    TileRail te = getWorld().getBlockEntity(currentParent, TileRail.class);
 	    if (te == null || te.info == null) {
 	        parentTileCache = null;
@@ -782,6 +786,7 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 			}
 		}
 
+		/*
 		if (this.ticksExisted % 20 == 0) {
 			switch (augment) {
 				case ITEM_LOADER:
@@ -792,6 +797,7 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 					this.markDirty();
 			}
 		}
+		*/
 
 		if (!canOperate()) {
 			return;
