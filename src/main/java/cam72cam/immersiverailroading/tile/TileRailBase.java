@@ -47,7 +47,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.luaj.vm2.LuaValue;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -214,7 +213,7 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 		context.registerLibrary(new EventModule(this));
 	}
 
-	private void loadScript(Identifier script, @Nullable List<String> modules) {
+	private void loadScript(Identifier script, List<String> modules) {
 		if (context == null) {
 			initLuaAugment();
 		}
