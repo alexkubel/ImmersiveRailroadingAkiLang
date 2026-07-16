@@ -12,6 +12,7 @@ import cam72cam.immersiverailroading.library.PhysicalMaterials;
 import cam72cam.immersiverailroading.library.TrackItems;
 import cam72cam.immersiverailroading.physics.MovementTrack;
 import cam72cam.immersiverailroading.thirdparty.trackapi.ITrack;
+import cam72cam.immersiverailroading.tile.TileRail;
 import cam72cam.immersiverailroading.tile.TileRailBase;
 import cam72cam.immersiverailroading.util.BlockUtil;
 import cam72cam.immersiverailroading.thirdparty.trackapi.IRPathingData;
@@ -577,8 +578,9 @@ public class SimulationState {
     }
 
     private boolean checkTileType(TileRailBase base, TrackItems type) {
+    	TileRail parent = base.getParentTile();
         return base != null
-                && base.getParentTile() != null
-                && base.getParentTile().info.settings.type == type;
+                && parent != null
+                && parent.info.settings.type == type;
     }
 }
