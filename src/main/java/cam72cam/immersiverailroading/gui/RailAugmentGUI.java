@@ -55,6 +55,16 @@ public class RailAugmentGUI implements IScreen {
         this.properties = tileRailBase.getAugmentProperties() == null
                           ? Augment.Properties.empty()
                           : tileRailBase.getAugmentProperties();
+        if(properties.positiveFilter == null) {
+            properties.positiveFilter = "";
+        }
+        if (properties.negativeFilter == null) {
+            properties.negativeFilter = "";
+        }
+        if (properties.doorActuatorFilter == null) {
+            properties.doorActuatorFilter = "";
+        }
+        
         scriptDef = LuaAugmentDefinition.scriptDef;
         if (tileRailBase.selectedScript != null) {
             scriptDef.forEach(s -> {
@@ -203,15 +213,6 @@ public class RailAugmentGUI implements IScreen {
     @Override
     public void onClose() {
         if (!this.augment.equals(Augment.LUA_SCRIPTER)) {
-            if(properties.positiveFilter == null) {
-                properties.positiveFilter = "";
-            }
-            if (properties.negativeFilter == null) {
-                properties.negativeFilter = "";
-            }
-            if (properties.doorActuatorFilter == null) {
-                properties.doorActuatorFilter = "";
-            }
             new AugmentFilterChangePacket(pos, properties).sendToServer();
         } else {
             if (selectedScript != null) {

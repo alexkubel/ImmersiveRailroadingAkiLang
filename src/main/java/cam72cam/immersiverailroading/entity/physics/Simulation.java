@@ -137,6 +137,17 @@ public class Simulation {
                         world.getBlock(pos);
                         newChunksLoaded = true;
                     }
+                    
+                    if (stock.lastKnownFront != null && !world.isBlockLoaded(stock.lastKnownFront)) {
+                        ImmersiveRailroading.debug("Loading coupled front neighbor at %s", stock.lastKnownFront);
+                        world.getBlock(stock.lastKnownFront);
+                        newChunksLoaded = true;
+                    }
+                    if (stock.lastKnownRear != null && !world.isBlockLoaded(stock.lastKnownRear)) {
+                        ImmersiveRailroading.debug("Loading coupled rear neighbor at %s", stock.lastKnownRear);
+                        world.getBlock(stock.lastKnownRear);
+                        newChunksLoaded = true;
+                    }
                 }
             }
             if (!newChunksLoaded) {

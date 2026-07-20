@@ -313,17 +313,8 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 	private final SingleCache<Vec3i, Vec3i> parentCache = new SingleCache<>(parent -> parent.add(getPos()));
 	
 	public Vec3i getParent() {
-		if (parent == null) {
-			World world = getWorld();
-			if (ticksExisted > 5 && world.isServer) {
-				ImmersiveRailroading.warn("Invalid block without parent");
-				// Might be null during init
-				world.setToAir(getPos());
-			}
-			return null;
-		}
-		// Assume if pos changes (piston? WE?) the TE is re-initialized
-		return parentCache.get(parent);
+		World world = getWorld();
+		return getParent(world);
 	}
 	
 	public Vec3i getParent(World world) {
@@ -454,6 +445,10 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 	*/
 	
 	public TileRail getParentTile() {
+		return getParentTile(true);
+	}
+	
+	public TileRail getParentTile(boolean forceLoad) {
 	    Vec3i currentParent = this.getParent();
 	    if (currentParent == null) {
 	        parentTileCache = null;
@@ -461,11 +456,12 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 	        return null;
 	    }
 	    
-	    if (parentTileCache != null && currentParent.equals(parentTileCacheKey)) {
+	    if (parentTileCache != null && currentParent.equals(parentTileCacheKey) && getWorld().isBlock(currentParent, IRBlocks.BLOCK_RAIL)) {
 	        return parentTileCache;
 	    }
 	    
-	    if (!getWorld().isBlockLoaded(currentParent)) {
+	    // TODO Jeronimo check functionality
+	    if (!forceLoad && !getWorld().isBlockLoaded(currentParent)) {
 	        return null;
 	    }
 	    
@@ -1140,6 +1136,13 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 
 	@Override
 	public boolean onClick(Player player, Player.Hand hand, Facing facing, Vec3d hit) {
+		if (this.getWorld().isClient && this.augment != null
+			&& player.hasPermission(Permissions.AUGMENT_TRACK)
+			&& !player.getHeldItem(Player.Hand.PRIMARY).is(IRItems.ITEM_ROLLING_STOCK)) {
+			GuiTypes.RAIL_AUGMENT.open(player, this.getPos());
+			return true;
+		}
+
 		ItemStack stack = player.getHeldItem(hand);
 		if (stack.is(IRItems.ITEM_TRACK_EXCHANGER) && player.hasPermission(Permissions.EXCHANGE_TRACK)) {
 			TileRail tileRail = this.getParentTile();
@@ -1220,9 +1223,12 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 		}
 
 		if(parent.info.settings.rollAndOffsetInfo != null) {
-			parent.info.settings.with(mutable -> mutable.rollAndOffsetInfo = mutable.pickRollAndOffsetInfo).write(stack);
+			parent.info.settings.with(mutable -> {
+				mutable.rollAndOffsetInfo = mutable.pickRollAndOffsetInfo;
+				mutable.type = mutable.pickType;
+			}).write(stack);
 		}else {
-			parent.info.settings.write(stack);
+			parent.info.settings.with(mutable -> mutable.type = mutable.pickType).write(stack);
 		}
 
 		return stack;
@@ -1241,9 +1247,9 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 
 		TagCompound data = te.getReplaced();
 		while (true) {
-			TileRail teParent = te.getParentTile();
-			if (teParent != null && teParent.getParentTile() != null) {
-				TileRail switchTile = te.getParentTile();
+			TileRail teParent = te.getParentTile(false);
+			if (teParent != null && teParent.getParentTile(false) != null) {
+				TileRail switchTile = te.getParentTile(false);
 				if (te instanceof TileRail) {
 					switchTile = (TileRail) te;
 				}
