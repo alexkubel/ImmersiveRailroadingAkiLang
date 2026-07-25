@@ -349,8 +349,8 @@ public class RailAugmentGUI implements IScreen {
     public static class ScriptDef {
         public String name;
         public Identifier script;
-        public String desc;
-        public List<String> additional;
+        public String desc = "";
+        public List<String> additional = new ArrayList<String>();
 
         public ScriptDef(){}
 
