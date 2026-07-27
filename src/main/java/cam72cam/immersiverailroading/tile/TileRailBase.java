@@ -445,10 +445,6 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 	*/
 	
 	public TileRail getParentTile() {
-		return getParentTile(true);
-	}
-	
-	public TileRail getParentTile(boolean forceLoad) {
 	    Vec3i currentParent = this.getParent();
 	    if (currentParent == null) {
 	        parentTileCache = null;
@@ -458,11 +454,6 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 	    
 	    if (parentTileCache != null && currentParent.equals(parentTileCacheKey) && getWorld().isBlock(currentParent, IRBlocks.BLOCK_RAIL)) {
 	        return parentTileCache;
-	    }
-	    
-	    // TODO Jeronimo check functionality
-	    if (!forceLoad && !getWorld().isBlockLoaded(currentParent)) {
-	        return null;
 	    }
 	    
 	    TileRail te = getWorld().getBlockEntity(currentParent, TileRail.class);
@@ -1247,9 +1238,9 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 
 		TagCompound data = te.getReplaced();
 		while (true) {
-			TileRail teParent = te.getParentTile(false);
-			if (teParent != null && teParent.getParentTile(false) != null) {
-				TileRail switchTile = te.getParentTile(false);
+			TileRail teParent = te.getParentTile();
+			if (teParent != null && teParent.getParentTile() != null) {
+				TileRail switchTile = te.getParentTile();
 				if (te instanceof TileRail) {
 					switchTile = (TileRail) te;
 				}
