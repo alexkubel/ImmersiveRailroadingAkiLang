@@ -8,7 +8,6 @@ import cam72cam.immersiverailroading.library.ModelComponentType;
 import cam72cam.immersiverailroading.library.Permissions;
 import cam72cam.immersiverailroading.model.part.Control;
 import cam72cam.immersiverailroading.registry.LocomotiveDieselDefinition;
-import cam72cam.immersiverailroading.remotecontrol.RemoteControlData;
 import cam72cam.immersiverailroading.util.BurnUtil;
 import cam72cam.immersiverailroading.util.FluidQuantity;
 import cam72cam.immersiverailroading.util.MathUtil;
@@ -467,16 +466,5 @@ public class LocomotiveDiesel extends Locomotive {
 		if (emergency) {
 			setTurnedOn(false);
 		}
-	}
-	
-	public RemoteControlData getRemoteControlData() {
-		RemoteControlData data = new RemoteControlData();	    
-	    data.throttle = getThrottle();
-	    data.brakePressure = getBrakePressure();
-	    data.indBrake = getIndependentBrake();
-	    data.reverser = getReverser();
-	    data.speed = getCurrentSpeed();
-
-	    return data;
 	}
 }

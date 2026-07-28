@@ -103,7 +103,8 @@ public class ImmersiveRailroading extends ModCore.Mod {
 				Packet.register(TextFieldClientPacket::new, PacketDirection.ServerToClient);
 				Packet.register(SoundConfig.SoundPacket::new, PacketDirection.ServerToClient);
 				Packet.register(RailAugmentGUI.AugmentFilterChangePacket::new, PacketDirection.ClientToServer);
-				Packet.register(RemoteControlSyncPacket::new, PacketDirection.ServerToClient);
+				Packet.register(RemoteControlServerPacket::new, PacketDirection.ServerToClient);
+				Packet.register(RemoteControlClientPacket::new, PacketDirection.ClientToServer);
 				Packet.register(RemoteControlActivePacket::new, PacketDirection.ClientToServer);
 
 				ServerChronoState.register();
@@ -272,6 +273,16 @@ public class ImmersiveRailroading extends ModCore.Mod {
 
 					updateMousePosition(evt);
 					mouseClicked(evt.x, evt.y, evt.button);
+					
+					// remote control
+					UUID activeLoco = WirelessRemotecontrolClient.getLoco();
+				    if (activeLoco != null) {
+				        RemoteControlData data = WirelessRemotecontrolClient.getData();
+				        if (data != null) {
+				            return remoteGui.click(evt, data);
+				        }
+				    }
+				    //
 
 					Entity riding = MinecraftClient.getPlayer().getRiding();
 					if (!(riding instanceof EntityRollingStock)) {
