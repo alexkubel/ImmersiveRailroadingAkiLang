@@ -116,6 +116,7 @@ public enum ModelComponentType {
 	SANDING_CONTROL_X("(SANDING|SAND)_CONTROL_#ID#"),
 	COMPRESSOR_CONTROL_X("COMPRESSOR_CONTROL_#ID#"),
 	TENDER_FEED_CONTROL_X("TENDER_FEED_#ID#"),
+	EMERGENCY_X("EMERGENCY_#ID#"),
 
 	// Gauges
 	GAUGE_LIQUID_X("GAUGE_LIQUID_#ID#"),
@@ -189,6 +190,7 @@ public enum ModelComponentType {
 			case ENGINE_START_X:
 			case SANDING_CONTROL_X:
 			case COMPRESSOR_CONTROL_X:
+			case EMERGENCY_X:
 				return TextUtil.translate("part.immersiverailroading:controls." + primary.toLowerCase(Locale.ROOT));
             default:
 				//Unexpected behaviour

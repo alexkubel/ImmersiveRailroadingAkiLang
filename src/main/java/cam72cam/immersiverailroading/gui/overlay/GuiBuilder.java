@@ -58,7 +58,7 @@ public class GuiBuilder {
     private final boolean global;
     protected final boolean invert;
     protected final boolean translucent;
-    private final boolean toggle;
+    protected final boolean toggle;
     protected final ClampMode clamp;
     protected final float tlx;
     protected final float tly;
@@ -476,6 +476,7 @@ public class GuiBuilder {
                     case WHISTLE:
                     case HORN:
                     case ENGINE:
+                    case EMERGENCY:
                         break;
                     default:
                         return null;
