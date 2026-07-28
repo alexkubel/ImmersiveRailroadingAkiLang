@@ -955,6 +955,7 @@ public abstract class Locomotive extends FreightTank{
 	    data.reverser = getReverser();
 	    data.speed = getCurrentSpeed();
 	    data.emergency = getEmergency();
+	    data.horn = hornPull;
 
 	    return data;
 	}
