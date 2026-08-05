@@ -148,24 +148,47 @@ public class RemoteOverlay extends GuiBuilder {
         	switch (readout) {
 			case THROTTLE: {
 				value = data.throttle;
+				break;
 			}
 			case BRAKE_PRESSURE: {
 				value = data.brakePressure;
+				break;
 			}
 			case INDEPENDENT_BRAKE: {
 				value = data.indBrake;
+				break;
 			}
 			case REVERSER: {
 				value = data.reverser;
+				break;
 			}
 			case EMERGENCY: {
 				value = data.emergency ? 1 : 0;
+				break;
 			}
 			case HORN, WHISTLE: {
 				value = data.horn > 0 ? 1 : 0;
+				break;
+			}
+			case SANDING: {
+				value = data.sanding ? 1 : 0;
+				break;
+			}
+			case TRACTIVE_EFFORT: {
+				value = data.tractiveEffort;
+				break;
+			}
+			case BRAKE_CYLINDER_PRESSURE: {
+				value = data.brakeCylPressure;
+				break;
+			}
+			case ENGINE: {
+				value = data.engine ? 1 : 0;
+				break;
 			}
 			default:
 				value = 0;
+				break;
 			}
         }
 
@@ -221,7 +244,7 @@ public class RemoteOverlay extends GuiBuilder {
 	    }
 
 	    if (interactable() && (image != null || text != null)) {
-	        if (readout == null) {
+        	if (readout == null) {
 	            return null;
 	        }
 	        switch (readout) {
@@ -231,6 +254,10 @@ public class RemoteOverlay extends GuiBuilder {
 	            case INDEPENDENT_BRAKE:
 	            case EMERGENCY:
 	            case WHISTLE, HORN:
+	            case SANDING:
+	            case TRACTIVE_EFFORT:
+	            case BRAKE_CYLINDER_PRESSURE:
+	            case ENGINE:
 	                break;
 	            default:
 	                return null;

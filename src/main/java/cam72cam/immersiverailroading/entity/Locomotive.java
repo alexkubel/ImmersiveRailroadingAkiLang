@@ -95,7 +95,7 @@ public abstract class Locomotive extends FreightTank{
     @TagSync
     @TagField("sanding")
     public boolean isSanding = false;
-    private boolean sandingKey = false;
+    public boolean sandingKey = false;
     private int sandingKeyTimeout = 0;
     private int sandTime = 0;
 
@@ -956,6 +956,10 @@ public abstract class Locomotive extends FreightTank{
 	    data.speed = getCurrentSpeed();
 	    data.emergency = getEmergency();
 	    data.horn = hornPull;
+	    data.sanding = sandingKey;
+	    data.tractiveEffort = getCurrentTractiveEffort();
+	    data.brakeCylPressure = getBrakeCylinderPressure();
+	    data.engine = getEngineState();
 
 	    return data;
 	}
