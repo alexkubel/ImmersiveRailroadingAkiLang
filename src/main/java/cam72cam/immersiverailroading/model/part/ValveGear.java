@@ -169,7 +169,7 @@ public abstract class ValveGear {
                     thickness = 0.6f;
                     diameter = 0.2f;
                 }
-                Particles.SMOKE.accept(new SmokeParticle.SmokeParticleData(stock.getWorld(), particlePos.getRight(), new Vec3d(sideMotion.x, sideMotion.y+0.01 * stock.gauge.scale(), sideMotion.z), 80, 0, thickness, diameter * stock.gauge.scale(), stock.getDefinition().steamParticleTexture));
+                Particles.SMOKE.accept(new SmokeParticle.SmokeParticleData(stock.getWorld(), particlePos.getRight(), new Vec3d(sideMotion.x, sideMotion.y+0.01 * stock.gauge.scale(), sideMotion.z), 80, 0, thickness, diameter * stock.gauge.scale(), stock.getDefinition().getSteamParticle()));
             }
 
             if (stock instanceof LocomotiveSteam) {
