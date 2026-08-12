@@ -24,7 +24,6 @@ public class RailSettings {
     public final RollAndOffsetInfo rollAndOffsetInfo;
     // Full info when picking items
     public final RollAndOffsetInfo pickRollAndOffsetInfo;
-    public final TrackPositionType posType;
     public final TrackSmoothing smoothing;
     public final TrackDirection direction;
     public final ItemStack railBed;
@@ -35,14 +34,13 @@ public class RailSettings {
     public final int transfertableEntryCount;
     public final int transfertableEntrySpacing;
 
-    public RailSettings(Gauge gauge, String track, TrackItems type, TrackItems pickType, int length, float degrees, float curvosity, TrackPositionType posType, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo, TrackDirection direction, ItemStack railBed, ItemStack railBedFill, boolean isPreview, boolean isGradeCrossing, int count, int spacing) {
+    public RailSettings(Gauge gauge, String track, TrackItems type, TrackItems pickType, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo, TrackDirection direction, ItemStack railBed, ItemStack railBedFill, boolean isPreview, boolean isGradeCrossing, int count, int spacing) {
         this.gauge = gauge;
         this.track = track;
         this.type = type;
         this.pickType = pickType;
         this.length = length;
         this.degrees = degrees;
-        this.posType = posType;
         this.smoothing = smoothing;
         this.nearPointData = nearPointData;
         this.farPointData = farPointData;
@@ -59,7 +57,7 @@ public class RailSettings {
     }
 
     public void write(ItemStack stack) {
-        TagCompound data = new TagCompound();
+        TagCompound data = stack.getTagCompound();
         try {
             TagSerializer.serialize(data, mutable());
         } catch (SerializationException e) {
@@ -165,8 +163,6 @@ public class RailSettings {
         public float degrees;
         @TagField("curvosity")
         public float curvosity;
-        @TagField("pos_type")
-        public TrackPositionType posType;
         @TagField(value = "smoothing", mapper = SmoothingMapper.class)
         public TrackSmoothing smoothing;
         @TagField("direction")
@@ -210,7 +206,6 @@ public class RailSettings {
             this.length = settings.length;
             this.degrees = settings.degrees;
             this.curvosity = settings.curvosity;
-            this.posType = settings.posType;
             this.smoothing = settings.smoothing;
             this.direction = settings.direction;
             this.railBed = settings.railBed;
@@ -230,12 +225,11 @@ public class RailSettings {
 
             nearPointData = new EndPointData(0);
             farPointData = new EndPointData(10);
-            rollAndOffsetInfo = null;
+            rollAndOffsetInfo = RollAndOffsetInfo.getDefault();
             pickRollAndOffsetInfo = rollAndOffsetInfo;
 
             length = 10;
             degrees = 90;
-            posType = TrackPositionType.FIXED;
             smoothing = TrackSmoothing.BOTH;
             direction = TrackDirection.NONE;
             railBed = ItemStack.EMPTY;
@@ -258,7 +252,6 @@ public class RailSettings {
                     length,
                     degrees,
                     curvosity,
-                    posType,
                     smoothing,
                     nearPointData,
                     farPointData,
@@ -312,6 +305,8 @@ public class RailSettings {
                         d.set(fieldName, target);
                     },
                     d -> {
+                        TagCompound railData = d.get(fieldName);
+                        NbtMigrators.migrateTrackAlignment(railData);
                         try {
                             return new Mutable(d.get(fieldName)).immutable();
                         } catch (SerializationException e) {
