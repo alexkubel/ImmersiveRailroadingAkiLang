@@ -72,7 +72,6 @@ public class TrackGui implements IScreen {
 	private Slider parallelCountSlider;
 	private Slider parallelGapSlider;
 	private Button bedTypeButton;
-	private Button bedFillButton;
 	private Slider bedFillWidthSlider;
 	private Button embankmentButton;
 	private Slider embankmentOffsetSlider;

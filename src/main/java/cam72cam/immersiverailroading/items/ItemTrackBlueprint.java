@@ -11,6 +11,8 @@ import cam72cam.immersiverailroading.registry.TrackDefinition;
 import cam72cam.immersiverailroading.tile.TileRailPreview;
 import cam72cam.immersiverailroading.util.TrackUtil;
 import cam72cam.immersiverailroading.track.BuilderParallel;
+import cam72cam.immersiverailroading.util.PlacementInfo;
+import cam72cam.immersiverailroading.util.BlockUtil;
 import cam72cam.immersiverailroading.util.*;
 import cam72cam.mod.entity.Player;
 import cam72cam.mod.item.*;
@@ -59,7 +61,6 @@ public class ItemTrackBlueprint extends CustomItem {
 		ItemStack stack = player.getHeldItem(hand);
 		PlacementInfo snapped = TrackUtil.getNeighborNode(player, player.getWorld(), pos, hit, stack);
 		RailSettings stackInfo = RailSettings.from(stack);
-		float yaw;
 
 		if (world.isServer && hand == Player.Hand.SECONDARY) {
 			ItemStack blockinfo = world.getItemStack(pos);
