@@ -67,6 +67,13 @@ public abstract class FreightTank extends Freight {
 		return fluidAmount;
 	}
 	
+	public void setLiquidAmount(int fluidAmount, String fluidType) {
+		this.fluidAmount = fluidAmount;
+		if (fluidType != null) {
+			this.fluidType = fluidType;
+		}
+	}
+	
 	public Fluid getLiquid() {
 		if (fluidType == null) {
 			return null;

@@ -176,9 +176,14 @@ public class RailInfo {
 	}
 
 	public RailInfo with(Consumer<Mutable> mod) {
-		Mutable mut = new Mutable(this);
-		mod.accept(mut);
-		return mut.immutable();
+	    Mutable mut = new Mutable(this);
+	    mod.accept(mut);
+	    RailInfo result = mut.immutable();
+	    
+	    if (this.settings.equals(result.settings) && this.placementInfo.equals(result.placementInfo) && Objects.equals(this.customInfo, result.customInfo)) {
+	        result.builders = this.builders;
+	    }
+	    return result;
 	}
 
 
@@ -191,6 +196,7 @@ public class RailInfo {
 		}
 		return builder;
 	}
+	
 	private BuilderBase constructBuilder(World world, Vec3i pos) {
 		switch (settings.type) {
 		case STRAIGHT:
@@ -422,7 +428,8 @@ public class RailInfo {
 			newPositionFormat.setDouble("z", nbt.getDouble("placementPositionZ"));
 			nbt.set("placementPosition", newPositionFormat);
 
-			PlacementInfo placementInfo = new PlacementInfo(nbt);
+			@SuppressWarnings("deprecation")
+            PlacementInfo placementInfo = new PlacementInfo(nbt);
 			placementInfo = new PlacementInfo(placementInfo.placementPosition, placementInfo.direction, placementInfo.yaw, null);
 
 			SwitchState switchState = SwitchState.values()[nbt.getInteger("switchState")];

@@ -1,5 +1,7 @@
 package cam72cam.immersiverailroading.util;
 
+import java.util.Objects;
+
 import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.items.nbt.RailSettings;
 import cam72cam.immersiverailroading.library.TrackDirection;
@@ -182,6 +184,22 @@ public class PlacementInfo {
 
 	public PlacementInfo withDirection(TrackDirection direction) {
 		return new PlacementInfo(placementPosition, direction, yaw, control);
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+	    if (this == o) return true;
+	    if (!(o instanceof PlacementInfo)) return false;
+	    PlacementInfo other = (PlacementInfo) o;
+	    return Float.compare(yaw, other.yaw) == 0
+	            && direction == other.direction
+	            && placementPosition.equals(other.placementPosition)
+	            && Objects.equals(control, other.control);
+	}
+
+	@Override
+	public int hashCode() {
+	    return Objects.hash(placementPosition, direction, yaw, control);
 	}
 
 	public PlacementInfo withYaw(float yaw) {
