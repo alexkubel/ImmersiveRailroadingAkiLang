@@ -26,7 +26,6 @@ import cam72cam.mod.serialization.TagCompound;
 import cam72cam.mod.serialization.TagField;
 import cam72cam.mod.serialization.TagMapper;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class LocomotiveSteam extends Locomotive {
 	// PSI

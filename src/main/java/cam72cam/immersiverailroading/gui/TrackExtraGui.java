@@ -40,6 +40,7 @@ public class TrackExtraGui implements IScreen {
     private RailSettings.Mutable settings;
     private RollAndOffsetInfo.Mutable rollAndOffsetInfoCache;
     private int targetGuiOpenType;
+    private boolean unlockGuiTurnDegree;
     private boolean edited;
     private boolean editLeft;
     private final double length;
@@ -66,16 +67,9 @@ public class TrackExtraGui implements IScreen {
     private TextField zOffsetHandleXLenInput;
     private Slider ArcLenFactorSlider;
     private Button insertOrDeletePointButton;
-    private Button editLeftButton;
-    private Button resetAllButton;
     private Button rollOffsetTypeButton;
     private Button railInfoLabel;
-    private CheckBox rollEffectTileCB;
     private CheckBox railBlockNormalCB;
-    private CheckBox degreeModeCB;
-    private CheckBox offsetVertByNormalCB;
-//    private Button wayCircleButton;
-    private Button TrackGuiButton;
     public TrackExtraGui() {
         this(MinecraftClient.getPlayer().getHeldItem(Player.Hand.PRIMARY), null);
     }
@@ -85,7 +79,9 @@ public class TrackExtraGui implements IScreen {
     private TrackExtraGui(ItemStack stack, TileRailPreview te) {
         stack = stack.copy();
         this.settings = RailSettings.from(stack).mutable();
-        this.targetGuiOpenType = new ItemTrackBlueprint.Data(stack).guiOpenType;
+        ItemTrackBlueprint.Data data = new ItemTrackBlueprint.Data(stack);
+        this.targetGuiOpenType = data.guiOpenType;
+        this.unlockGuiTurnDegree = data.unlockGuiTurnDegree;
         this.te = te;
 
         if(this.te != null) {//TODO:Switch and multiSwitch support
@@ -164,14 +160,14 @@ public class TrackExtraGui implements IScreen {
                                                    }
                                                });
 
-        resetAllButton = new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50, ytop, 50, height,
+        new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50, ytop, 50, height,
                                     GuiText.TRACK_EXTRA_RESET.toString(), (_, _) -> {
             edited = true;
             rollAndOffsetInfoCache.resetAll();
             updateSliderRelated();
         });
 
-        editLeftButton = new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50 * 2, ytop, 50, height,
+        new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50 * 2, ytop, 50, height,
                                     GuiText.TRACK_EXTRA_EDIT_LEFT.toString(), (_, self) -> {
             editLeft = !editLeft;
             if(editLeft) {
@@ -182,7 +178,7 @@ public class TrackExtraGui implements IScreen {
             updateAllCurveInfoDisplay();
         });
 
-        TrackGuiButton = new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50 * 3, ytop, 50, height,
+        new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50 * 3, ytop, 50, height,
                                     GuiText.TRACK_EXTRA_TO_MAIN.toString(), (_, _) -> {
             targetGuiOpenType = 0;
             onClose();
@@ -196,7 +192,7 @@ public class TrackExtraGui implements IScreen {
         //Back to top
         ytop = -GUIHelpers.getScreenHeight() / 4;
 
-        rollEffectTileCB = new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 - 85 - 75, ytop + 1,
+        new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 - 85 - 75, ytop + 1,
                                         GuiText.SELECTOR_ROLL_EFFECT_TILE.toString(), rollAndOffsetInfoCache.rollEffectTile,
                                         (_, self) -> {
                                             edited = true;
@@ -223,7 +219,7 @@ public class TrackExtraGui implements IScreen {
                                   });
         railBlockNormalCB.setVisible(false);//modifiable vanilla block model later
 
-        degreeModeCB = new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 + 2, ytop + 1,
+        new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 + 2, ytop + 1,
                                            GuiText.SELECTOR_DEGREE_MODE.toString(), rollAndOffsetInfoCache.degreeMode,
                                            (_, self) -> {
                                                edited = true;
@@ -231,7 +227,7 @@ public class TrackExtraGui implements IScreen {
                                                rollMax = rollAndOffsetInfoCache.degreeMode ? 45 : 60;//180 for degree mode later
                                            });
 
-        offsetVertByNormalCB = new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 - 85 - 75, ytop + 12,
+        new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 - 85 - 75, ytop + 12,
                 GuiText.SELECTOR_OFFSET_VERT_BY_NORMAL_MODE.toString(), rollAndOffsetInfoCache.offsetVertByNormal,
                 (_, self) -> {
                     edited = true;
@@ -524,30 +520,28 @@ public class TrackExtraGui implements IScreen {
         }
 
         if (this.te != null) {
-            new ItemRailUpdatePacket(te.getPos(), settings.immutable(), targetGuiOpenType).sendToServer();
+            new ItemRailUpdatePacket(te.getPos(), settings.immutable(), targetGuiOpenType, unlockGuiTurnDegree).sendToServer();
 
             //Also update client Item to update Rail information
             ItemStack clientStack = te.getItem();
             settings.immutable().write(clientStack);
-            ItemTrackBlueprint.Data data = new ItemTrackBlueprint.Data(clientStack);
-            data.guiOpenType = targetGuiOpenType;
-            data.write();
+            ItemTrackBlueprint.Data.writeTo(clientStack, targetGuiOpenType, unlockGuiTurnDegree);
             te.setItem(clientStack, MinecraftClient.getPlayer());
         } else {
-            new ItemRailUpdatePacket(settings.immutable(), targetGuiOpenType).sendToServer();
+            new ItemRailUpdatePacket(settings.immutable(), targetGuiOpenType, unlockGuiTurnDegree).sendToServer();
 
             //Also update client Item to update Rail information
             ItemStack clientStack = MinecraftClient.getPlayer().getHeldItem(Player.Hand.PRIMARY);
             settings.immutable().write(clientStack);
-            ItemTrackBlueprint.Data data = new ItemTrackBlueprint.Data(clientStack);
-            data.guiOpenType = targetGuiOpenType;
-            data.write();
+            ItemTrackBlueprint.Data.writeTo(clientStack, targetGuiOpenType, unlockGuiTurnDegree);
             MinecraftClient.getPlayer().setHeldItem(Player.Hand.PRIMARY, clientStack);
         }
     }
 
     @Override
     public void draw(IScreenBuilder builder, RenderState state) {
+        GUIHelpers.drawRect(0, 0, GUIHelpers.getScreenWidth(), GUIHelpers.getScreenHeight(), 0xCC000000);
+
         int height = 20;
         double xScale = 200;
         double rollYScale = height * 1.5 / rollMax;

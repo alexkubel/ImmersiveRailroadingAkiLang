@@ -44,7 +44,7 @@ public class VanillaParticle {
             Vec3d fakeMotion = stock.getVelocity();
             double scale = stock.gauge.scale();
             World world = stock.getWorld();
-            Identifier particleTex = stock.getDefinition().steamParticleTexture;
+            Identifier particleTex = stock.getDefinition().getSteamParticle();
             for (ModelComponent comp : components) {
                 Vec3d particlePos = stock.getPosition().add(VecUtil
                         .rotateWrongYaw(comp.center.scale(scale), stock.getRotationYaw() + 180));

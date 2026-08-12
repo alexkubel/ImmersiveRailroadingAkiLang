@@ -9,6 +9,7 @@ import cam72cam.immersiverailroading.library.*;
 import cam72cam.immersiverailroading.model.part.Control;
 import cam72cam.immersiverailroading.physics.MovementTrack;
 import cam72cam.immersiverailroading.registry.LocomotiveDefinition;
+import cam72cam.immersiverailroading.remotecontrol.RemoteControlData;
 import cam72cam.immersiverailroading.thirdparty.trackapi.ITrack;
 import cam72cam.immersiverailroading.tile.TileRailBase;
 import cam72cam.immersiverailroading.util.MathUtil;
@@ -47,6 +48,10 @@ public abstract class Locomotive extends FreightTank{
 	
 	private boolean fullBrake = false;
 	private boolean emergencyBrake = false;
+	
+	@TagSync
+	@TagField("EMERGENCY")
+	private boolean emergency = false;
 	
 	// TODO How many decimal places?
     @TagSync(floatPrecision = 5)
@@ -90,7 +95,7 @@ public abstract class Locomotive extends FreightTank{
     @TagSync
     @TagField("sanding")
     public boolean isSanding = false;
-    private boolean sandingKey = false;
+    public boolean sandingKey = false;
     private int sandingKeyTimeout = 0;
     private int sandTime = 0;
 
@@ -378,6 +383,8 @@ public abstract class Locomotive extends FreightTank{
 		    setControlPosition(control, 0.5f);
 		} else if (control.part.type.equals(ModelComponentType.COMPRESSOR_CONTROL_X)) {
             compressorActive = getControlPosition(control) > 0.5f;
+		} else if (control.part.type.equals(ModelComponentType.EMERGENCY_X)) {
+			setEmergency(getControlPosition(control) > 0.5);
 		}
 	}
 
@@ -920,4 +927,40 @@ public abstract class Locomotive extends FreightTank{
     public void setSanding(boolean sanding) {
         isSanding = sanding;
     }
+    
+    public void setEmergency(boolean emergency) {
+    	if (emergency) {
+        	setThrottle(0);
+        	setTrainBrake(1);
+        	this.emergency = true;
+        	if (!getCurrentSpeed().isZero()) {
+        		setSanding(true);
+        	} else {
+        		setSanding(false);
+        	}
+    	} else {
+    		this.emergency = false;
+    	}
+    }
+    
+    public boolean getEmergency() {
+    	return emergency;
+    }
+    
+	public RemoteControlData getRemoteControlData() {
+		RemoteControlData data = new RemoteControlData();	    
+	    data.throttle = getThrottle();
+	    data.brakePressure = getBrakePressure();
+	    data.indBrake = getIndependentBrake();
+	    data.reverser = getReverser();
+	    data.speed = getCurrentSpeed();
+	    data.emergency = getEmergency();
+	    data.horn = hornPull;
+	    data.sanding = sandingKey;
+	    data.tractiveEffort = getCurrentTractiveEffort();
+	    data.brakeCylPressure = getBrakeCylinderPressure();
+	    data.engine = getEngineState();
+
+	    return data;
+	}
 }

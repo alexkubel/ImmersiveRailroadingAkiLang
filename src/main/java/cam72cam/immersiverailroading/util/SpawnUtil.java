@@ -49,6 +49,7 @@ public class SpawnUtil {
 		}
 		
 		double offset = def.getCouplerPosition(CouplerType.BACK, gauge) - ConfigDebug.couplerRange;
+		@SuppressWarnings("deprecation")
 		float yaw = player.getYawHead();
 
 		if (worldIn.isServer) {
