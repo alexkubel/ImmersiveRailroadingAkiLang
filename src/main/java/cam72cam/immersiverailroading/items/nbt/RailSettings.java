@@ -98,19 +98,25 @@ public class RailSettings {
                 && transfertableEntrySpacing == other.transfertableEntrySpacing
                 && gauge.equals(other.gauge)
                 && type == other.type
-                && posType == other.posType
                 && smoothing == other.smoothing
                 && direction == other.direction
                 && railBed.equals(other.railBed)
                 && railBedFill.equals(other.railBedFill)
-                && track.equals(other.track);
+                && track.equals(other.track)
+                && pickType.equals(other.pickType)
+                && nearPointData.equals(other.nearPointData)
+                && farPointData.equals(other.farPointData)
+                && rollAndOffsetInfo.equals(other.rollAndOffsetInfo)
+                && pickRollAndOffsetInfo.equals(other.pickRollAndOffsetInfo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(gauge, track, type, length, degrees, curvosity,
-                posType, smoothing, direction, railBed, railBedFill,
-                isPreview, isGradeCrossing, transfertableEntryCount, transfertableEntrySpacing);
+        return Objects.hash(gauge, track, type, pickType, length, degrees,
+        		smoothing, nearPointData, farPointData, rollAndOffsetInfo,
+        		pickRollAndOffsetInfo, direction, railBed, railBedFill, isPreview,
+                isGradeCrossing, curvosity, transfertableEntryCount,
+                transfertableEntrySpacing);
     }
 
     private static class DegreesMapper implements TagMapper<Float> {
