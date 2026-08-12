@@ -24,7 +24,6 @@ import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("restriction")
 public class DefinitionManager {
     private static Map<String, EntityRollingStockDefinition> definitions;
     private static BiMultiMap<String, EntityRollingStockDefinition> stockTags;
@@ -94,7 +93,8 @@ public class DefinitionManager {
         }
     }
 
-    public static void initDefinitions() {
+    @SuppressWarnings("deprecation")
+	public static void initDefinitions() {
         if (definitions != null) {
             for (EntityRollingStockDefinition def : definitions.values()) {
                 if (def.model != null) {
@@ -141,25 +141,25 @@ public class DefinitionManager {
         long bytesPerThread = ConfigPerformance.megabytesReservedPerStockLoadingThread * 1024L * 1024L;
         int loadingThreads = MathUtil.clamp((int) (maxMemory / bytesPerThread), 1, processors);
         ImmersiveRailroading.info("Using %s threads to load Immersive Railroading (%sMB per thread)", loadingThreads, ConfigPerformance.megabytesReservedPerStockLoadingThread);
-        ForkJoinPool stockLoadingPool = new ForkJoinPool(loadingThreads, pool -> {
+        try (ForkJoinPool stockLoadingPool = new ForkJoinPool(loadingThreads, pool -> {
             final ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
             worker.setName("ImmersiveRailroading-" + worker.getPoolIndex());
             return worker;
-        }, null, false);
-        try {
-            stockLoadingPool.submit(() -> {
-                try {
-                    initModels();
-                } catch (IOException e) {
-                    throw new RuntimeException("Unable to load rolling stock, do you have a broken pack?", e);
-                }
-            }).get();
-        } catch (InterruptedException | ExecutionException e) {
-            // the pool broke in unexpected ways or was killed
-            throw new RuntimeException(e);
-        } finally {
-            stockLoadingPool.shutdown();
-        }
+        }, null, false)) {
+			try {
+			    stockLoadingPool.submit(() -> {
+			        try {
+			            initModels();
+			        } catch (IOException e) {
+			            throw new RuntimeException("Unable to load rolling stock, do you have a broken pack?", e);
+			        }
+			    }).get();
+			} catch (InterruptedException | ExecutionException e) {
+			    throw new RuntimeException(e);
+			} finally {
+			    stockLoadingPool.shutdown();
+			}
+		}
         try {
             initTracks();
         } catch (Exception e) {

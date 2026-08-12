@@ -45,13 +45,13 @@ public class TrackExchangerGui implements IScreen {
 	List<ItemStack> oreDict;
 
 	private Button trackButton;
-	private ListSelector trackSelector;
+	private ListSelector<TrackDefinition> trackSelector;
 
 	private Button bedTypeButton;
-	private ListSelector railBedSelector;
+	private ListSelector<ItemStack> railBedSelector;
 
 	private Button gaugeButton;
-	private ListSelector gaugeSelector;
+	private ListSelector<Gauge> gaugeSelector;
 
 	private double zoom = 1;
 
@@ -131,7 +131,7 @@ public class TrackExchangerGui implements IScreen {
 			}
 		};
 
-		Slider zoom_slider = new Slider(screen, GUIHelpers.getScreenWidth() / 2 - 150, (int) (GUIHelpers.getScreenHeight()*0.75 - height),
+		new Slider(screen, GUIHelpers.getScreenWidth() / 2 - 150, (int) (GUIHelpers.getScreenHeight()*0.75 - height),
 				GuiText.SLIDER_ZOOM.toString(), 0.1, 2, 1, true) {
 			@Override
 			public void onSlider() {

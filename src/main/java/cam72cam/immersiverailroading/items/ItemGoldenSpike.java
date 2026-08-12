@@ -2,7 +2,6 @@ package cam72cam.immersiverailroading.items;
 
 import cam72cam.immersiverailroading.IRBlocks;
 import cam72cam.immersiverailroading.ImmersiveRailroading;
-import cam72cam.immersiverailroading.items.nbt.RailSettings;
 import cam72cam.immersiverailroading.library.GuiTypes;
 import cam72cam.immersiverailroading.tile.TileRailPreview;
 import cam72cam.immersiverailroading.util.PlacementInfo;
@@ -42,8 +41,7 @@ public class ItemGoldenSpike extends CustomItem {
 		return Collections.singletonList(ItemTabs.MAIN_TAB);
 	}
 
-	@SuppressWarnings("deprecation")
-    @Override
+	@Override
 	public ClickResult onClickBlock(Player player, World world, Vec3i pos, Player.Hand hand, Facing facing, Vec3d hit) {
 		ItemStack held = player.getHeldItem(hand);
 		if (world.isBlock(pos, IRBlocks.BLOCK_RAIL_PREVIEW)) {

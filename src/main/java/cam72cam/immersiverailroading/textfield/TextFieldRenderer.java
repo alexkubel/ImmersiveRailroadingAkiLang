@@ -73,7 +73,8 @@ public class TextFieldRenderer {
 
         // I will probably remove this in the future
         if (Config.ConfigDebug.renderDebugLines) {
-            try (With ctx = RenderContext.apply(state)) {
+            try (@SuppressWarnings("unused")
+			With ctx = RenderContext.apply(state)) {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glLineWidth(2.0f);
 

@@ -5,8 +5,6 @@ import cam72cam.immersiverailroading.entity.EntityMoveableRollingStock;
 import cam72cam.immersiverailroading.render.ExpireableMap;
 import cam72cam.mod.resource.Identifier;
 import cam72cam.mod.sound.ISound;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class FlangeSound {

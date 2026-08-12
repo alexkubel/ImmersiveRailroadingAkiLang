@@ -969,7 +969,7 @@ public class TileRailBase extends BlockEntityTrackTickable implements IRedstoneP
 					if (stock != null) {
 						float value = world.getRedstone(pos) / 15f;
 						if (actuatorFilter == null || actuatorFilter.isEmpty()) {
-							for (Door d : stock.getDefinition().getModel().getDoors()) {
+							for (Door<?> d : stock.getDefinition().getModel().getDoors()) {
 								if (d.type == Door.Types.EXTERNAL) {
 									stock.setControlPosition(d, value);
 								}

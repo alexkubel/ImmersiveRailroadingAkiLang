@@ -51,8 +51,7 @@ public class ItemTrackBlueprint extends CustomItem {
         }
 	}
 	
-	@SuppressWarnings("deprecation")
-    @Override
+	@Override
     public ClickResult onClickBlock(Player player, World world, Vec3i pos, Player.Hand hand, Facing facing, Vec3d hit) {
 		ItemStack stack = player.getHeldItem(hand);
 		RailSettings stackInfo = RailSettings.from(stack);
