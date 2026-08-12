@@ -47,7 +47,6 @@ import cam72cam.mod.world.World;
 import org.apache.commons.lang3.ArrayUtils;
 import org.luaj.vm2.LuaValue;
 
-import java.security.Permissions;
 import java.util.*;
 import java.util.function.Predicate;
 
