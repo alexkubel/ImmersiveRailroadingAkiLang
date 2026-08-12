@@ -31,7 +31,12 @@ public class PlacementInfo {
 		return MathUtil.clamp(Config.ConfigBalance.AnglePlacementSegmentation, 1, 90);
 	}
 	
-	public PlacementInfo(ItemStack stack, float yawHead, Vec3d hit, boolean isNear, boolean overrideYaw) {
+	public PlacementInfo(ItemStack stack, float yawHead, Vec3d hit) {
+		this(stack, yawHead, hit, false);
+	}
+	public PlacementInfo(ItemStack stack, float yawHead, Vec3d hit, boolean isNear, boolean overrideYaw, boolean snapping) {
+		yawHead = ((- yawHead % 360) + 360) % 360;
+		this.yaw = ((int)((yawHead + 90/(segmentation() * 2f)) * segmentation())) / 90 * 90 / (segmentation() * 1f);
 
 		RailSettings settings = RailSettings.from(stack);
 		TrackPositionType posType = isNear ? settings.nearPointData.posType() : settings.farPointData.posType();
@@ -68,30 +73,17 @@ public class PlacementInfo {
 
 		double hitX = hit.x % 1;
 		double hitZ = hit.z % 1;
-
-		switch (posType) {
-			case FIXED:
-				hitX = 0.5f;
-				hitZ = 0.5f;
-				break;
-			case PIXELS:
-				hitX = ((int) (hitX * 16)) / 16f;
-				hitZ = ((int) (hitZ * 16)) / 16f;
-				//Fall through
-			case SMOOTH:
-				if (hit.z < 0) {
-					hitZ += 1;
-				}
-				if (hit.x < 0) {
-					hitX += 1;
-				}
-				break;
-			case PIXELS_LOCKED:
-				hitX = ((int) (hitX * 16)) / 16f;
-				hitZ = ((int) (hitZ * 16)) / 16f;
-				//Fall through
-			case SMOOTH_LOCKED:
-				if (quarter != 0) {
+		if (!snapping) {
+			switch (posType) {
+				case FIXED:
+					hitX = 0.5f;
+					hitZ = 0.5f;
+					break;
+				case PIXELS:
+					hitX = ((int) (hitX * 16)) / 16f;
+					hitZ = ((int) (hitZ * 16)) / 16f;
+					//Fall through
+				case SMOOTH:
 					if (hit.z < 0) {
 						hitZ += 1;
 					}
@@ -99,28 +91,41 @@ public class PlacementInfo {
 						hitX += 1;
 					}
 					break;
-				}
-
-				switch (facing()) {
-					case EAST:
-					case WEST:
-						hitZ = 0.5f;
+				case PIXELS_LOCKED:
+					hitX = ((int) (hitX * 16)) / 16f;
+					hitZ = ((int) (hitZ * 16)) / 16f;
+					//Fall through
+				case SMOOTH_LOCKED:
+					if (quarter != 0) {
+						if (hit.z < 0) {
+							hitZ += 1;
+						}
 						if (hit.x < 0) {
 							hitX += 1;
 						}
 						break;
-					case NORTH:
-					case SOUTH:
-						hitX = 0.5f;
-						if (hit.z < 0) {
-							hitZ += 1;
-						}
-						break;
-					default:
-				}
-				break;
-		}
+					}
 
+					switch (facing()) {
+						case EAST:
+						case WEST:
+							hitZ = 0.5f;
+							if (hit.x < 0) {
+								hitX += 1;
+							}
+							break;
+						case NORTH:
+						case SOUTH:
+							hitX = 0.5f;
+							if (hit.z < 0) {
+								hitZ += 1;
+							}
+							break;
+						default:
+					}
+					break;
+			}
+		}
 		this.placementPosition = new Vec3d(new Vec3i(hit)).add(hitX, 0, hitZ);
 		this.direction = direction;
 		this.control = null;

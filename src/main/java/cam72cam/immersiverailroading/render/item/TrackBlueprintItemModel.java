@@ -1,6 +1,8 @@
 package cam72cam.immersiverailroading.render.item;
 
 import cam72cam.immersiverailroading.items.nbt.RailSettings;
+import cam72cam.immersiverailroading.Config;
+import cam72cam.immersiverailroading.util.TrackUtil;
 import cam72cam.immersiverailroading.library.TrackItems;
 import cam72cam.immersiverailroading.render.ExpireableMap;
 import cam72cam.immersiverailroading.render.rail.RailRender;
@@ -76,7 +78,6 @@ public class TrackBlueprintItemModel implements ItemRender.IItemModel {
 
 	private static ExpireableMap<String, RailInfo> infoCache = new ExpireableMap<>();
 	public static void renderMouseover(Player player, ItemStack stack, Vec3i pos, Vec3d vec, RenderState state, float partialTicks) {
-		Vec3d hit = vec.subtract(pos);
 		World world = player.getWorld();
 
 		ItemStack snappedStack = stack.copy();
@@ -100,8 +101,6 @@ public class TrackBlueprintItemModel implements ItemRender.IItemModel {
 
 		state.blend(new BlendMode(BlendMode.GL_CONSTANT_ALPHA, BlendMode.GL_ONE).constantColor(1, 1, 1, 0.5f)).lightmap(1, 1);
 
-
-		Vec3d cameraPos = GlobalRender.getCameraPos(partialTicks);
 		Vec3d offPos = info.placementInfo.placementPosition.add(pos).subtract(cameraPos);
 		state.translate(offPos.x, offPos.y, offPos.z);
 

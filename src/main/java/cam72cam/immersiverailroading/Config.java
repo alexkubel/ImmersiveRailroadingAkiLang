@@ -308,6 +308,12 @@ public class Config {
 		@Comment("Does stock drops itself/components when player is in creative mode?")
 		public static boolean stockDropInCreativeMode = true;
 
+		@Comment("Enable track snapping")
+		public static boolean enableTrackSnapping = false;
+
+		@Comment("Should track snapping also snap angle")
+		public static boolean trackSnapAngle = false;
+
 		@Comment("If your map depends on strong charging of detectors then enable this, otherwise set it as false to avoid some synchronization issues")
 		public static boolean detectorOutputStrongCharging = false;
 	}

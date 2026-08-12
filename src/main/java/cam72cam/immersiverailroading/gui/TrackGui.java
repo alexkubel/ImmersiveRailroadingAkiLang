@@ -10,8 +10,14 @@ import cam72cam.immersiverailroading.registry.DefinitionManager;
 import cam72cam.immersiverailroading.registry.TrackDefinition;
 import cam72cam.immersiverailroading.render.rail.RailRender;
 import cam72cam.immersiverailroading.tile.TileRailPreview;
+import cam72cam.immersiverailroading.track.BuilderParallel;
 import cam72cam.immersiverailroading.track.BuilderTransferTable;
 import cam72cam.immersiverailroading.track.BuilderTurnTable;
+import cam72cam.immersiverailroading.track.RailBedFillPlanner;
+import cam72cam.immersiverailroading.util.IRFuzzy;
+import cam72cam.immersiverailroading.util.MathUtil;
+import cam72cam.immersiverailroading.util.PlacementInfo;
+import cam72cam.immersiverailroading.util.RailInfo;
 import cam72cam.immersiverailroading.track.CubicCurve;
 import cam72cam.immersiverailroading.track.TrackBase;
 import cam72cam.immersiverailroading.util.*;
@@ -33,6 +39,8 @@ import static cam72cam.immersiverailroading.gui.ClickListHelper.next;
 import static cam72cam.immersiverailroading.gui.components.GuiUtils.fitString;
 
 public class TrackGui implements IScreen {
+	private static final int BOTTOM_PAGE_COUNT = 3;
+
 	long frame;
 
 	private TileRailPreview te;
@@ -61,6 +69,20 @@ public class TrackGui implements IScreen {
 	private Slider curvositySlider;
 	private Button smoothingButton;
 	private Button directionButton;
+	private Slider parallelCountSlider;
+	private Slider parallelGapSlider;
+	private Button bedTypeButton;
+	private Button bedFillButton;
+	private Slider bedFillWidthSlider;
+	private Button embankmentButton;
+	private Slider embankmentOffsetSlider;
+	private Slider embankmentHeightSlider;
+	private Slider embankmentGradientSlider;
+	private CheckBox cuttingCB;
+	private Slider cuttingOffsetSlider;
+	private Slider cuttingHeightSlider;
+	private Slider cuttingGradientSlider;
+	private Button bottomPageButton;
 
 	// Transfer Table
 	private Slider transfertableEntryCountSlider;
@@ -73,6 +95,7 @@ public class TrackGui implements IScreen {
 	// Bed Fill
 	private Button bedFillButton;
 	private ListSelector<ItemStack> railBedFillSelector;
+	private ListSelector<ItemStack> embankmentSelector;
 
 	// Track Model
 	private Button trackButton;
@@ -90,6 +113,7 @@ public class TrackGui implements IScreen {
 	private Button trackEndPointGuiButton;
 
 	private double zoom = 1;
+	private int bottomPage;
 
 	public TrackGui() {
 		this(MinecraftClient.getPlayer().getHeldItem(Player.Hand.PRIMARY));
@@ -208,6 +232,8 @@ public class TrackGui implements IScreen {
 				curvositySlider.setVisible(settings.type.hasCurvosity());
 				smoothingButton.setVisible(settings.type.hasSmoothing());
 				directionButton.setVisible(settings.type.hasDirection());
+				parallelCountSlider.setVisible(BuilderParallel.supports(settings.type));
+				parallelGapSlider.setVisible(BuilderParallel.supports(settings.type));
 
 				trackExtraGuiButton.setVisible(settings.type.canRoll());
 				trackEndPointGuiButton.setVisible(settings.type.canRoll());
@@ -354,6 +380,26 @@ public class TrackGui implements IScreen {
 		curvositySlider.onSlider();
 		ytop += height;
 
+		this.parallelCountSlider = new Slider(screen, 25+xtop, ytop, "", 1, 10, settings.parallelCount, false) {
+			@Override
+			public void onSlider() {
+				settings.parallelCount = this.getValueInt();
+				parallelCountSlider.setText(GuiText.SELECTOR_PARALLEL_TRACKS.toString(settings.parallelCount));
+			}
+		};
+		parallelCountSlider.onSlider();
+		ytop += height;
+
+		this.parallelGapSlider = new Slider(screen, 25+xtop, ytop, "", -20, 20, settings.parallelGap * 2, false) {
+			@Override
+			public void onSlider() {
+				settings.parallelGap = this.getValueInt() / 2f;
+				parallelGapSlider.setText(GuiText.SELECTOR_PARALLEL_GAP.toString(String.format("%.1f", settings.parallelGap)));
+			}
+		};
+		parallelGapSlider.onSlider();
+		ytop += height;
+
 		directionButton.setVisible(settings.type.hasDirection());
 
 		degreesSlider.setVisible(settings.type.hasQuarters() && !unlockGuiTurnDegree);
@@ -362,6 +408,8 @@ public class TrackGui implements IScreen {
 
 		curvositySlider.setVisible(settings.type.hasCurvosity());
 		smoothingButton.setVisible(settings.type.hasSmoothing());
+		parallelCountSlider.setVisible(BuilderParallel.supports(settings.type));
+		parallelGapSlider.setVisible(BuilderParallel.supports(settings.type));
 
 		transfertableEntryCountSlider.setVisible(settings.type == TrackItems.TRANSFERTABLE);
 		transfertableEntrySpacingSlider.setVisible(settings.type == TrackItems.TRANSFERTABLE);
@@ -373,7 +421,19 @@ public class TrackGui implements IScreen {
 		//height = 20;
 		//xtop = GUIHelpers.getScreenWidth() / 2 - width;
 		//ytop = -GUIHelpers.getScreenHeight() / 4;
-		ytop = (int) (GUIHelpers.getScreenHeight() * 0.75 - height * 5);
+		ytop = (int) (GUIHelpers.getScreenHeight() * 0.75 - height * 7);
+		int bottomX = xtop;
+		int bottomY = ytop;
+		int pageButtonY = bottomY + height * 6;
+
+		bottomPageButton = new Button(screen, bottomX, pageButtonY, width, height, "") {
+			@Override
+			public void onClick(Player.Hand hand) {
+				bottomPage = (bottomPage + BOTTOM_PAGE_COUNT + (hand == Player.Hand.PRIMARY ? 1 : -1)) % BOTTOM_PAGE_COUNT;
+				hideSelectors();
+				updateBottomPageControls();
+			}
+		};
 
 		trackSelector = new ListSelector<TrackDefinition>(screen, width,  250, height,
 				DefinitionManager.getTrack(settings.track),
@@ -416,6 +476,7 @@ public class TrackGui implements IScreen {
 			public void onClick(ItemStack option) {
 				settings.railBedFill = option;
 				bedFillButton.setText(GuiText.SELECTOR_RAIL_BED_FILL.toString(getStackName(settings.railBedFill)));
+				updateRailBedFillControls();
 			}
 		};
 		bedFillButton = new Button(screen, xtop, ytop, width, height, GuiText.SELECTOR_RAIL_BED_FILL.toString(getStackName(settings.railBedFill))) {
@@ -425,6 +486,105 @@ public class TrackGui implements IScreen {
 			}
 		};
 		ytop += height;
+
+		bedFillWidthSlider = new Slider(screen, 25+bottomX, ytop, "", 0, 10, settings.railBedFillWidth, false) {
+			@Override
+			public void onSlider() {
+				settings.railBedFillWidth = this.getValueInt();
+				bedFillWidthSlider.setText(GuiText.SELECTOR_RAIL_BED_FILL_WIDTH.toString(settings.railBedFillWidth));
+			}
+		};
+		bedFillWidthSlider.onSlider();
+		ytop += height;
+
+		embankmentSelector = new ListSelector<ItemStack>(screen, width, 250, height, settings.embankment,
+				oreDict.stream().collect(Collectors.toMap(TrackGui::getStackName, g -> g, (u, v) -> u, LinkedHashMap::new))
+		) {
+			@Override
+			public void onClick(ItemStack option) {
+				settings.embankment = option;
+				embankmentButton.setText(GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment)));
+				updateEmbankmentControls();
+			}
+		};
+		int yEmbankment = bottomY;
+		embankmentButton = new Button(screen, bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
+			@Override
+			public void onClick(Player.Hand hand) {
+				showSelector(embankmentSelector);
+			}
+		};
+		yEmbankment += height;
+
+		embankmentOffsetSlider = new Slider(screen, 25+bottomX, yEmbankment, "", 0, 10, settings.embankmentOffset, false) {
+			@Override
+			public void onSlider() {
+				settings.embankmentOffset = this.getValueInt();
+				embankmentOffsetSlider.setText(GuiText.SELECTOR_EMBANKMENT_OFFSET.toString(settings.embankmentOffset));
+			}
+		};
+		embankmentOffsetSlider.onSlider();
+		yEmbankment += height;
+
+		embankmentHeightSlider = new Slider(screen, 25+bottomX, yEmbankment, "", 1, 40, settings.embankmentHeight, false) {
+			@Override
+			public void onSlider() {
+				settings.embankmentHeight = this.getValueInt();
+				embankmentHeightSlider.setText(GuiText.SELECTOR_EMBANKMENT_HEIGHT.toString(settings.embankmentHeight));
+			}
+		};
+		embankmentHeightSlider.onSlider();
+		yEmbankment += height;
+
+		embankmentGradientSlider = new Slider(screen, 25+bottomX, yEmbankment, "", 1, 100, settings.embankmentGradient * 10, false) {
+			@Override
+			public void onSlider() {
+				settings.embankmentGradient = this.getValueInt() / 10f;
+				embankmentGradientSlider.setText(GuiText.SELECTOR_EMBANKMENT_GRADIENT.toString(String.format("%.1f", settings.embankmentGradient)));
+			}
+		};
+		embankmentGradientSlider.onSlider();
+		yEmbankment += height;
+
+		int yCutting = bottomY;
+		cuttingCB = new CheckBox(screen, bottomX+2, yCutting+2, GuiText.SELECTOR_CUTTING.toString(), settings.cuttingEnabled) {
+			@Override
+			public void onClick(Player.Hand hand) {
+				settings.cuttingEnabled = cuttingCB.isChecked();
+				updateCuttingControls();
+			}
+		};
+		yCutting += height;
+
+		cuttingOffsetSlider = new Slider(screen, 25+bottomX, yCutting, "", 0, 10, settings.cuttingOffset, false) {
+			@Override
+			public void onSlider() {
+				settings.cuttingOffset = this.getValueInt();
+				cuttingOffsetSlider.setText(GuiText.SELECTOR_CUTTING_OFFSET.toString(settings.cuttingOffset));
+			}
+		};
+		cuttingOffsetSlider.onSlider();
+		yCutting += height;
+
+		cuttingHeightSlider = new Slider(screen, 25+bottomX, yCutting, "", 1, 40, settings.cuttingHeight, false) {
+			@Override
+			public void onSlider() {
+				settings.cuttingHeight = this.getValueInt();
+				cuttingHeightSlider.setText(GuiText.SELECTOR_CUTTING_HEIGHT.toString(settings.cuttingHeight));
+			}
+		};
+		cuttingHeightSlider.onSlider();
+		yCutting += height;
+
+		cuttingGradientSlider = new Slider(screen, 25+bottomX, yCutting, "", 1, 100, settings.cuttingGradient * 10, false) {
+			@Override
+			public void onSlider() {
+				settings.cuttingGradient = this.getValueInt() / 10f;
+				cuttingGradientSlider.setText(GuiText.SELECTOR_CUTTING_GRADIENT.toString(String.format("%.1f", settings.cuttingGradient)));
+			}
+		};
+		cuttingGradientSlider.onSlider();
+		yCutting += height;
 
 		nearPosTypeButton = new Button(screen, xtop, ytop, width / 2, height, GuiText.SELECTOR_POSITION_NEAR.toString(settings.nearPointData.posType())) {
 			@Override
@@ -442,7 +602,7 @@ public class TrackGui implements IScreen {
 		};
 		ytop += height;
 
-		isPreviewCB = new CheckBox(screen, xtop+2, ytop+2, GuiText.SELECTOR_PLACE_BLUEPRINT.toString(), settings.isPreview) {
+		isPreviewCB = new CheckBox(screen, bottomX+2, ytop+2, GuiText.SELECTOR_PLACE_BLUEPRINT.toString(), settings.isPreview) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				settings.isPreview = isPreviewCB.isChecked();
@@ -450,7 +610,7 @@ public class TrackGui implements IScreen {
 		};
 //		ytop += height;
 
-		isGradeCrossingCB = new CheckBox(screen, xtop+102, ytop+2, GuiText.SELECTOR_GRADE_CROSSING.toString(), settings.isGradeCrossing) {
+		isGradeCrossingCB = new CheckBox(screen, bottomX+102, ytop+2, GuiText.SELECTOR_GRADE_CROSSING.toString(), settings.isGradeCrossing) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				settings.isGradeCrossing = isGradeCrossingCB.isChecked();
@@ -493,18 +653,66 @@ public class TrackGui implements IScreen {
 				zoom = this.getValue();
 			}
 		};
+		updateBottomPageControls();
 	}
 
 	private void showSelector(ListSelector<?> selector) {
 		boolean isVisible = selector.isVisible();
 
+		hideSelectors();
+
+		selector.setVisible(!isVisible);
+	}
+
+	private void hideSelectors() {
 		gaugeSelector.setVisible(false);
 		typeSelector.setVisible(false);
 		trackSelector.setVisible(false);
 		railBedSelector.setVisible(false);
 		railBedFillSelector.setVisible(false);
+		embankmentSelector.setVisible(false);
+	}
 
-		selector.setVisible(!isVisible);
+	private void updateEmbankmentControls() {
+		updateBottomPageControls();
+	}
+
+	private void updateRailBedFillControls() {
+		updateBottomPageControls();
+	}
+
+	private void updateCuttingControls() {
+		updateBottomPageControls();
+	}
+
+	private void updateBottomPageControls() {
+		if (bottomPageButton == null || cuttingGradientSlider == null) {
+			return;
+		}
+
+		boolean trackPage = bottomPage == 0;
+		boolean embankmentPage = bottomPage == 1;
+		boolean cuttingPage = bottomPage == 2;
+
+		bottomPageButton.setText(GuiText.SELECTOR_PAGE.toString(bottomPage + 1, BOTTOM_PAGE_COUNT));
+
+		trackButton.setVisible(trackPage);
+		bedTypeButton.setVisible(trackPage);
+		bedFillButton.setVisible(trackPage);
+		bedFillWidthSlider.setVisible(trackPage && !settings.railBedFill.isEmpty());
+		posTypeButton.setVisible(trackPage);
+		isPreviewCB.setVisible(trackPage);
+		isGradeCrossingCB.setVisible(trackPage);
+
+		embankmentButton.setVisible(embankmentPage);
+		embankmentOffsetSlider.setVisible(embankmentPage && !settings.embankment.isEmpty());
+		embankmentHeightSlider.setVisible(embankmentPage && !settings.embankment.isEmpty());
+		embankmentGradientSlider.setVisible(embankmentPage && !settings.embankment.isEmpty());
+
+		cuttingCB.setVisible(cuttingPage);
+		cuttingOffsetSlider.setVisible(cuttingPage && settings.cuttingEnabled);
+		cuttingHeightSlider.setVisible(cuttingPage && settings.cuttingEnabled);
+		cuttingGradientSlider.setVisible(cuttingPage && settings.cuttingEnabled);
 	}
 
 	@Override
@@ -565,7 +773,7 @@ public class TrackGui implements IScreen {
 			return;
 		}
 
-		if (trackSelector.isVisible() || railBedSelector.isVisible() || railBedFillSelector.isVisible()) {
+		if (trackSelector.isVisible() || railBedSelector.isVisible() || railBedFillSelector.isVisible() || embankmentSelector.isVisible()) {
 			ListSelector.ButtonRenderer<ItemStack> icons = (button, x, y, value) -> {
 				Matrix4 zMatrix = new Matrix4();
 				zMatrix.translate(0, 0, 100);
@@ -575,12 +783,14 @@ public class TrackGui implements IScreen {
 
 			railBedSelector.render(icons);
 			railBedFillSelector.render(icons);
+			embankmentSelector.render(icons);
 
 
 			double textScale = 1.5;
 			String str = trackSelector.isVisible() ? GuiText.SELECTOR_TRACK.toString(DefinitionManager.getTrack(settings.track).name) :
 					railBedSelector.isVisible() ? GuiText.SELECTOR_RAIL_BED.toString(getStackName(settings.railBed)) :
-							GuiText.SELECTOR_RAIL_BED_FILL.toString(getStackName(settings.railBedFill));
+							railBedFillSelector.isVisible() ? GuiText.SELECTOR_RAIL_BED_FILL.toString(getStackName(settings.railBedFill)) :
+									GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment));
 
 			GUIHelpers.drawCenteredString(str, (int) ((450 + (GUIHelpers.getScreenWidth()-450) / 2) / textScale), (int) (10 / textScale), 0xFFFFFF, new Matrix4().scale(textScale, textScale, textScale));
 
@@ -611,10 +821,9 @@ public class TrackGui implements IScreen {
 
 			if (!info.settings.railBedFill.isEmpty()) {
 				StandardModel model = new StandardModel();
-				for (TrackBase base : info.getBuilder(MinecraftClient.getPlayer().getWorld()).getTracksForRender()) {
-					Vec3i basePos = base.getPos();
+				for (Vec3i basePos : new RailBedFillPlanner(MinecraftClient.getPlayer().getWorld(), info.settings, info.getBuilder(MinecraftClient.getPlayer().getWorld()).getTracksForRender()).surface()) {
 					model.addItemBlock(info.settings.railBedFill, new Matrix4()
-							.translate(basePos.x, basePos.y-1, basePos.z)
+							.translate(basePos.x, basePos.y, basePos.z)
 					);
 				}
 				model.render(state);
@@ -676,10 +885,9 @@ public class TrackGui implements IScreen {
 		RailRender.get(info).renderRailBase(state);
 		if (!info.settings.railBedFill.isEmpty()) {
 			StandardModel model = new StandardModel();
-			for (TrackBase base : info.getBuilder(MinecraftClient.getPlayer().getWorld()).getTracksForRender()) {
-				Vec3i basePos = base.getPos();
+			for (Vec3i basePos : new RailBedFillPlanner(MinecraftClient.getPlayer().getWorld(), info.settings, info.getBuilder(MinecraftClient.getPlayer().getWorld()).getTracksForRender()).surface()) {
 				model.addItemBlock(info.settings.railBedFill, new Matrix4()
-						.translate(basePos.x, basePos.y-1, basePos.z)
+						.translate(basePos.x, basePos.y, basePos.z)
 				);
 			}
 			model.render(state);
