@@ -1,6 +1,8 @@
 package cam72cam.immersiverailroading.track;
 
+import cam72cam.immersiverailroading.ImmersiveRailroading;
 import cam72cam.immersiverailroading.library.TrackSmoothing;
+import cam72cam.immersiverailroading.util.EndPointData;
 import cam72cam.immersiverailroading.util.RollAndOffsetInfo;
 import cam72cam.immersiverailroading.util.VecUtil;
 import cam72cam.mod.math.Vec3d;
@@ -20,7 +22,7 @@ public class CubicCurve {
     public double[] len;
     public int segment;
 
-    //Used for subSplit rollAndOffsetInfo
+    // Used for subSplit rollAndOffsetInfo
     public double arcLenFactorStart;
     public double arcLenFactorEnd;
 
@@ -40,17 +42,360 @@ public class CubicCurve {
         this.arcLenFactorEnd = arcLenFactorEnd;
     }
 
-    public static CubicCurve circle(int radius, float degrees, double arcLenFactorStart, double arcLenFactorEnd) {
+    // This algorithm expands handle wrongly, which causes worse approximation, whose error can arrive 0.4 with R = 100.
+    // Legacy quarter-circle approximation retained for compatibility, really not suggested.
+    public static CubicCurve circleSimpleMortensen(int radius, float degrees, double arcLenFactorStart, double arcLenFactorEnd) {
         float cRadScale = degrees / 90;
         Vec3d p1 = new Vec3d(0, 0, radius);
         Vec3d ctrl1 = new Vec3d(cRadScale * c * radius, 0, radius);
         Vec3d ctrl2 = new Vec3d(radius, 0, cRadScale * c * radius);
         Vec3d p2 = new Vec3d(radius, 0, 0);
 
-        Matrix4 quart = new Matrix4();
-        quart.rotate(Math.toRadians(-90+degrees), 0, 1, 0);
+        Matrix4 rotation = new Matrix4();
+        rotation.rotate(Math.toRadians(-90 + degrees), 0, 1, 0);
 
-        return new CubicCurve(p1, ctrl1, quart.apply(ctrl2), quart.apply(p2), arcLenFactorStart, arcLenFactorEnd).apply(new Matrix4().translate(0, 0, -radius));
+        return new CubicCurve(p1, ctrl1, rotation.apply(ctrl2), rotation.apply(p2), arcLenFactorStart, arcLenFactorEnd).apply(new Matrix4().translate(0, 0, -radius));
+    }
+
+    // According to Matlab test, this could be a little worse with angle in 0-80, and a little better with 80-90 than circleClassic, but very close
+    public static CubicCurve circleBetterMortensen(int radius, float degrees, double arcLenFactorStart, double arcLenFactorEnd) {
+        float cRadScale = (float) (Math.tan(Math.toRadians(degrees / 90)) / Math.tan(Math.toRadians(90f / 4f)));
+        Vec3d p1 = new Vec3d(0, 0, radius);
+        Vec3d ctrl1 = new Vec3d(cRadScale * c * radius, 0, radius);
+        Vec3d ctrl2 = new Vec3d(radius, 0, cRadScale * c * radius);
+        Vec3d p2 = new Vec3d(radius, 0, 0);
+
+        Matrix4 rotation = new Matrix4();
+        rotation.rotate(Math.toRadians(-90 + degrees), 0, 1, 0);
+
+        return new CubicCurve(p1, ctrl1, rotation.apply(ctrl2), rotation.apply(p2), arcLenFactorStart, arcLenFactorEnd).apply(new Matrix4().translate(0, 0, -radius));
+    }
+
+    // According to Matlab test, classic algorithm still has better approximation.
+    public static CubicCurve circleClassic(double radius, double degrees, double arcLenFactorStart, double arcLenFactorEnd) {
+        double theta = Math.toRadians(degrees);
+        double handle = radius * 4.0 / 3.0 * Math.tan(theta / 4.0);
+
+        Vec3d p1 = new Vec3d(0, 0, radius);
+        Vec3d ctrl1 = new Vec3d(handle, 0, radius);
+        Vec3d p2 = new Vec3d(radius * Math.sin(theta), 0, radius * Math.cos(theta));
+        Vec3d ctrl2 = new Vec3d(p2.x - handle * Math.cos(theta), 0, p2.z + handle * Math.sin(theta));
+
+        return new CubicCurve(p1, ctrl1, ctrl2, p2, arcLenFactorStart, arcLenFactorEnd).apply(new Matrix4().translate(0, 0, -radius));
+    }
+
+    // https://help.autodesk.com/view/CIV3D/2025/ENU/?guid=GUID-DD7C0EA1-8465-45BA-9A39-FC05106FD822
+    // cubicParabolaMaxAngle = Math.toDegrees(Math.atan(1.0/Math.sqrt(5))) = 24.09484255211;
+    public static double cubicParabolaMaxAngle = 24.09484255211;// ease3Parabola will meet min R at this angle
+
+    /**
+     * Constructs the exact Bézier representation of a cubic parabola
+     * between a straight line and a circular arc.
+     *
+     * <p>The generated Bézier curve is mathematically identical to the
+     * corresponding cubic parabola segment rather than an approximation.</p>
+     *
+     * @param radius Radius of the circular arc.
+     * @param projectedLength Projection length along the local x-axis.
+     * @param straightAtP1 {@code true} for Straight→Circular,
+     *                     {@code false} for Circular→Straight.
+     */
+    public static CubicCurve cubicParabola(double radius, double projectedLength, boolean straightAtP1, double arcLenFactorStart, double arcLenFactorEnd) {
+
+        double projectedLength2 = projectedLength * projectedLength;
+
+        Vec3d p1, ctrl1, ctrl2, p2;
+
+        if (straightAtP1) {
+
+            p1 = new Vec3d(0, 0, 0);
+
+            // Uniform x-spacing makes x(t) exactly linear.
+            ctrl1 = new Vec3d(projectedLength / 3.0, 0, 0);
+            ctrl2 = new Vec3d(projectedLength * 2.0 / 3.0, 0, 0);
+
+            // Exact cubic parabola endpoint.
+            p2 = new Vec3d(
+                    projectedLength,
+                    0,
+                    -projectedLength2 / (6.0 * radius));
+
+            return new CubicCurve(p1, ctrl1, ctrl2, p2, arcLenFactorStart, arcLenFactorEnd);
+
+        } else {
+
+            p1 = new Vec3d(0, 0, 0);
+
+            ctrl1 = new Vec3d(
+                    projectedLength / 3.0,
+                    0,
+                    projectedLength2 / (6.0 * radius));
+
+            ctrl2 = new Vec3d(
+                    projectedLength * 2.0 / 3.0,
+                    0,
+                    projectedLength2 / (6.0 * radius));
+
+            p2 = new Vec3d(
+                    projectedLength,
+                    0,
+                    projectedLength2 / (6.0 * radius));
+
+            Matrix4 rotation = new Matrix4();
+            rotation.rotate(
+                    Math.atan(projectedLength / (2.0 * radius)),
+                    0, 1, 0);
+
+            return new CubicCurve(
+                    rotation.apply(p1),
+                    rotation.apply(ctrl1),
+                    rotation.apply(ctrl2),
+                    rotation.apply(p2),
+                    arcLenFactorStart,
+                    arcLenFactorEnd
+            );
+        }
+    }
+
+    /**
+     * Constructs the exact Bézier representation of a cubic parabola
+     * between a straight line and a circular arc from the specified
+     * deflection angle.
+     *
+     * @param radius Radius of the circular arc.
+     * @param angleDeg Total deflection angle in degrees.
+     * @param straightAtP1 {@code true} for Straight→Circular,
+     *                     {@code false} for Circular→Straight.
+     */
+    public static CubicCurve cubicParabolaByAngle(double radius, double angleDeg, boolean straightAtP1, double arcLenFactorStart, double arcLenFactorEnd) {
+        double projectedLength = 2.0 * radius * Math.tan(Math.toRadians(angleDeg));
+
+        return cubicParabola(radius, projectedLength, straightAtP1, arcLenFactorStart, arcLenFactorEnd);
+    }
+
+    /**
+     * Returns whether a cubic parabola can be constructed between two
+     * circular radii with the specified deflection angle.
+     *
+     * @param startRadius Radius at the beginning of the transition.
+     * @param endRadius Radius at the end of the transition.
+     * @param angleDeg Total deflection angle in degrees.
+     * @return {@code true} if a valid cubic parabola exists.
+     */
+    public static boolean isCubicParabolaValid(double startRadius, double endRadius, double angleDeg) {
+        if (Double.isNaN(startRadius) || Double.isNaN(endRadius) || Double.isNaN(angleDeg))
+            return false;
+
+        if (startRadius <= 0 || endRadius <= 0)
+            return false;
+
+        if (angleDeg < 0 || angleDeg > cubicParabolaMaxAngle)
+            return false;
+
+        // Degenerate case.
+        if (startRadius == endRadius)
+            return angleDeg == 0;
+
+        if (endRadius < startRadius) {
+            double tmp = startRadius;
+            startRadius = endRadius;
+            endRadius = tmp;
+        }
+
+        double k = startRadius / endRadius;
+        double tanAngle = Math.tan(Math.toRadians(angleDeg));
+
+        double k2 = k * k;
+        double delta = (1.0 - k2) * (1.0 - k2)
+                - 4.0 * k2 * tanAngle * tanAngle;
+
+        return delta >= 0.0;
+    }
+
+    public static boolean isCubicParabolaInputValid(double startRadius, double endRadius, double angleDeg) {
+        if(Math.abs(startRadius) < 1e-6 && Math.abs(endRadius) < 1e-6) return false;
+        if(Math.abs(startRadius) < 1e-6 && endRadius > 0.5) return CubicCurve.isCubicParabolaValid(angleDeg);
+        if(startRadius > 0.5 && Math.abs(endRadius) < 1e-6) return CubicCurve.isCubicParabolaValid(angleDeg);
+        if(startRadius > 0.5 && endRadius > 0.5) return CubicCurve.isCubicParabolaValid(startRadius, endRadius, angleDeg);
+        return false;
+    }
+
+    public static boolean isCubicParabolaValid(double angleDeg) {
+        return angleDeg > 0 && angleDeg < cubicParabolaMaxAngle;
+    }
+
+    /**
+     * Constructs the exact Bézier representation of a cubic parabola
+     * between two circular arcs.
+     *
+     * <p>The generated Bézier curve is mathematically identical to the
+     * corresponding cubic parabola segment rather than an approximation.</p>
+     *
+     * @param nearRadius Radius of the near circular arc.
+     * @param farRadius Radius of the far circular arc.
+     * @param projectedLength Projection length along the local x-axis.
+     */
+    public static CubicCurve cubicParabola(double nearRadius, double farRadius, double projectedLength, double arcLenFactorStart, double arcLenFactorEnd) {
+
+        boolean nearRadiusIsSmaller = nearRadius > farRadius;
+
+        double smallRadius = Math.min(nearRadius, farRadius);
+        double largeRadius = Math.max(nearRadius, farRadius);
+
+        double k = smallRadius / largeRadius;
+        double k2 = k * k;
+        double k3 = k2 * k;
+
+        double projectedLength2 = projectedLength * projectedLength;
+
+        double handleLength = projectedLength * (1.0 - k) / 3.0;
+        double handleProjection = handleLength * projectedLength;
+
+        Vec3d p1, ctrl1, ctrl2, p2;
+
+        Matrix4 rotation = new Matrix4();
+
+        if (nearRadiusIsSmaller) {
+
+            // Small radius -> Large radius
+
+            p1 = new Vec3d(
+                    k * projectedLength,
+                    0,
+                    k3 * projectedLength2 / (6.0 * smallRadius));
+
+            ctrl1 = new Vec3d(
+                    k * projectedLength + handleLength,
+                    0,
+                    k3 * projectedLength2 / (6.0 * smallRadius)
+                            + k2 * handleProjection / (2.0 * smallRadius));
+
+            ctrl2 = new Vec3d(
+                    k * projectedLength + handleLength * 2.0,
+                    0,
+                    projectedLength2 / (6.0 * smallRadius)
+                            - handleProjection / (2.0 * smallRadius));
+
+            p2 = new Vec3d(
+                    projectedLength,
+                    0,
+                    projectedLength2 / (6.0 * smallRadius));
+
+            double originX = p1.x;
+            double originZ = p1.z;
+
+            p1 = p1.add(-originX, 0, -originZ);
+            ctrl1 = ctrl1.add(-originX, 0, -originZ);
+            ctrl2 = ctrl2.add(-originX, 0, -originZ);
+            p2 = p2.add(-originX, 0, -originZ);
+
+            ctrl1 = ctrl1.add(0, 0, -2.0 * ctrl1.z);
+            ctrl2 = ctrl2.add(0, 0, -2.0 * ctrl2.z);
+            p2 = p2.add(0, 0, -2.0 * p2.z);
+
+            rotation.rotate(-Math.atan(projectedLength * k / (2.0 * largeRadius)), 0, 1, 0);
+
+        } else {
+
+            // Large radius -> Small radius
+
+            p1 = new Vec3d(
+                    0,
+                    0,
+                    0);
+
+            ctrl1 = new Vec3d(
+                    handleLength,
+                    0,
+                    handleProjection / (2.0 * smallRadius));
+
+            ctrl2 = new Vec3d(
+                    handleLength * 2.0,
+                    0,
+                    (1.0 - k3) * projectedLength2 / (6.0 * smallRadius)
+                            - k2 * handleProjection / (2.0 * smallRadius));
+
+            p2 = new Vec3d(
+                    projectedLength * (1.0 - k),
+                    0,
+                    (1.0 - k3) * projectedLength2 / (6.0 * smallRadius));
+
+            rotation.rotate(Math.atan(projectedLength / (2.0 * smallRadius)), 0, 1, 0);
+        }
+
+        return new CubicCurve(
+                rotation.apply(p1),
+                rotation.apply(ctrl1),
+                rotation.apply(ctrl2),
+                rotation.apply(p2),
+                arcLenFactorStart,
+                arcLenFactorEnd
+        );
+    }
+
+    /**
+     * Solves the projected length of a cubic parabola from the specified
+     * radii and total deflection angle.
+     *
+     * <p>The returned length is the projection of the cubic parabola onto
+     * the local x-axis rather than the true arc length.</p>
+     *
+     * @param nearRadius Radius of the near circular arc.
+     * @param farRadius Radius of the far circular arc.
+     * @param angleDeg Total deflection angle in degrees.
+     * @return Projected length of the cubic parabola.
+     * @throws IllegalArgumentException if the specified parameters cannot
+     *                                  construct a valid cubic parabola.
+     */
+    private static double solveProjectedLength(double nearRadius, double farRadius, double angleDeg) {
+
+        if (!isCubicParabolaValid(nearRadius, farRadius, angleDeg))
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Cannot construct cubic parabola (R1=%.3f, R2=%.3f, angle=%.3f°)",
+                            nearRadius, farRadius, angleDeg));
+
+        double smallRadius = Math.min(nearRadius, farRadius);
+        double largeRadius = Math.max(nearRadius, farRadius);
+
+        double k = smallRadius / largeRadius;
+        double k2 = k * k;
+
+        double tanAngle = Math.tan(Math.toRadians(angleDeg));
+
+        double delta =
+                (1.0 - k2) * (1.0 - k2)
+                        - 4.0 * k2 * tanAngle * tanAngle;
+
+        double tanStart =
+                ((1.0 - k2) - Math.sqrt(delta))
+                        / (2.0 * k2 * tanAngle);
+
+        return 2.0 * smallRadius * tanStart;
+    }
+
+    /**
+     * Constructs the exact Bézier representation of a cubic parabola
+     * between two circular arcs.
+     *
+     * <p>The generated Bézier curve is mathematically identical to the
+     * corresponding cubic parabola segment rather than an approximation.</p>
+     *
+     * @param nearRadius Radius of the near circular arc.
+     * @param farRadius Radius of the far circular arc.
+     * @param angleDeg Total deflection angle in degrees.
+     * @return Cubic Bézier representation of the cubic parabola.
+     * @throws IllegalArgumentException if the specified parameters cannot
+     *                                  construct a valid cubic parabola.
+     */
+    public static CubicCurve cubicParabolaByAngle(double nearRadius, double farRadius, double angleDeg, double arcLenFactorStart, double arcLenFactorEnd) {
+        return cubicParabola(
+                nearRadius,
+                farRadius,
+                solveProjectedLength(nearRadius, farRadius, angleDeg),
+                arcLenFactorStart,
+                arcLenFactorEnd
+        );
     }
 
     public CubicCurve apply(Matrix4 mat) {
@@ -254,9 +599,102 @@ public class CubicCurve {
         return res;
     }
 
+    private static Vec3d projectHandle(Vec3d base, Vec3d ctrl, double pitchRad)
+    {
+        double pitchTan = Math.tan(pitchRad);
+        if (Math.abs(pitchTan) >= 10) {
+            double limit = pitchTan > 0 ? 10 : -10;
+            ImmersiveRailroading.warn("The pitch tangent value %s is out of range and will be clamped to %s.", pitchTan, limit);
+            pitchTan = limit;
+        }
 
-    @Deprecated
-    public CubicCurve linearize(TrackSmoothing smoothing) {//TODO: Remove track smoothing and only use pitch-locked
+        double horizontal = VecUtil.flatDistance(base, ctrl);
+
+        return new Vec3d(ctrl.x, base.y + horizontal * pitchTan, ctrl.z);
+    }
+
+    private static Vec3d rotateHandle(Vec3d base, Vec3d ctrl, double pitchRad)
+    {
+        Vec3d offset = ctrl.subtract(base);
+
+        double horizontal = Math.sqrt(offset.x * offset.x + offset.z * offset.z);
+
+        if (horizontal < 1E-8) return ctrl;
+
+        double length = offset.length();
+
+        double newHorizontal = length * Math.cos(pitchRad);
+        double newVertical   = length * Math.sin(pitchRad);
+
+        double scale = newHorizontal / horizontal;
+
+        return new Vec3d(
+                base.x + offset.x * scale,
+                base.y + newVertical,
+                base.z + offset.z * scale
+        );
+    }
+
+    public CubicCurve linearize(TrackSmoothing smoothing, EndPointData near, EndPointData far) {
+        return switch (smoothing) {
+
+            case NEITHER_V2 -> {
+
+                double totalLength = VecUtil.flatDistance(p1, p2);
+                double height = p2.y - p1.y;
+
+                Vec3d newCtrl1 = new Vec3d(
+                        ctrl1.x,
+                        p1.y + height * VecUtil.flatDistance(p1, ctrl1) / totalLength,
+                        ctrl1.z
+                );
+
+                Vec3d newCtrl2 = new Vec3d(
+                        ctrl2.x,
+                        p2.y - height * VecUtil.flatDistance(ctrl2, p2) / totalLength,
+                        ctrl2.z
+                );
+
+                yield new CubicCurve(
+                        p1,
+                        newCtrl1,
+                        newCtrl2,
+                        p2,
+                        arcLenFactorStart,
+                        arcLenFactorEnd
+                );
+            }
+
+            case PITCH_SPECIFIED -> {
+
+                boolean nearRotate = near.pitchDegreeMode() || !near.projectHandle();
+
+                boolean farRotate = far.pitchDegreeMode() || !far.projectHandle();
+
+                Vec3d newCtrl1 = nearRotate
+                        ? rotateHandle(p1, ctrl1, near.getPitchRad())
+                        : projectHandle(p1, ctrl1, near.getPitchRad());
+
+                Vec3d newCtrl2 = farRotate
+                        ? rotateHandle(p2, ctrl2, -far.getPitchRad())
+                        : projectHandle(p2, ctrl2, -far.getPitchRad());
+
+                yield new CubicCurve(
+                        p1,
+                        newCtrl1,
+                        newCtrl2,
+                        p2,
+                        arcLenFactorStart,
+                        arcLenFactorEnd
+                );
+            }
+
+            default -> linearizeLegacy(smoothing);
+        };
+    }
+
+
+    private CubicCurve linearizeLegacy(TrackSmoothing smoothing) {
         double start = p1.distanceTo(ctrl1);
         double middle = ctrl1.distanceTo(ctrl2);
         double end = ctrl2.distanceTo(p2);

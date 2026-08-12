@@ -38,22 +38,25 @@ public class GuiTypes {
     public static final BlockGUI CASTING = GuiRegistry.registerBlock(TileMultiblock.class, GuiTypes::createMultiblockScreen);
     public static final BlockGUI PLATE_ROLLER = CASTING;
     private static IScreen createMultiblockScreen(TileMultiblock mb) {
-        if (!mb.isLoaded()) {
+        if (!mb.isLoaded() || mb.getName() == null) {
             return null;
         }
         return switch (mb.getName()) {
             case CastingMultiblock.NAME -> new CastingGUI(mb);
             case PlateRollerMultiblock.NAME -> new PlateRollerGUI(mb);
-            case null, default -> null;
+            default -> null;
         };
     }
 
     private static IScreen createTrackGuiScreen(TileRailPreview te) {
         try {
-            if (new ItemTrackBlueprint.Data(te.getItem()).guiOpenType == 0) {
+            int guiOpenType = new ItemTrackBlueprint.Data(te.getItem()).guiOpenType;
+            if (guiOpenType == 0) {
                 return new TrackGui(te);
-            } else {
+            } else if(guiOpenType == 1) {
                 return new TrackExtraGui(te);
+            } else {
+                return new TrackEndPointGui(te);
             }
         } catch (NullPointerException e) {
             return new TrackGui(te);
@@ -62,10 +65,13 @@ public class GuiTypes {
     private static IScreen createTrackGuiScreen() {
         ItemStack stack = MinecraftClient.getPlayer().getHeldItem(Player.Hand.PRIMARY);
         try {
-            if (new ItemTrackBlueprint.Data(stack).guiOpenType == 0) {
+            int guiOpenType = new ItemTrackBlueprint.Data(stack).guiOpenType;
+            if (guiOpenType == 0) {
                 return new TrackGui();
-            } else {
+            } else if(guiOpenType == 1) {
                 return new TrackExtraGui();
+            } else {
+                return new TrackEndPointGui();
             }
         } catch (NullPointerException e) {
             return new TrackGui();
