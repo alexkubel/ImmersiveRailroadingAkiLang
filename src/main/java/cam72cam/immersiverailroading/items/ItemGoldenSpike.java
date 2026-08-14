@@ -10,6 +10,8 @@ import cam72cam.immersiverailroading.util.TrackUtil;
 import cam72cam.immersiverailroading.util.PlacementInfo;
 import cam72cam.immersiverailroading.util.TrackSnapUtil;
 import cam72cam.mod.item.*;
+import cam72cam.immersiverailroading.util.BlockUtil;
+import cam72cam.immersiverailroading.tile.TileRailBase;
 import cam72cam.mod.serialization.TagField;
 import cam72cam.mod.sound.Audio;
 import cam72cam.mod.sound.SoundCategory;
