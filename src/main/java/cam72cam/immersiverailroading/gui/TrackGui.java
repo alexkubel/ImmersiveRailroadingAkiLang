@@ -71,7 +71,6 @@ public class TrackGui implements IScreen {
 	private Button directionButton;
 	private Slider parallelCountSlider;
 	private Slider parallelGapSlider;
-	private Button bedTypeButton;
 	private Slider bedFillWidthSlider;
 	private Button embankmentButton;
 	private Slider embankmentOffsetSlider;
@@ -92,7 +91,6 @@ public class TrackGui implements IScreen {
 	private ListSelector<ItemStack> railBedSelector;
 
 	// Bed Fill
-	private Button bedFillButton;
 	private ListSelector<ItemStack> railBedFillSelector;
 	private ListSelector<ItemStack> embankmentSelector;
 

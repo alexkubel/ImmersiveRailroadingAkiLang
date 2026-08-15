@@ -44,7 +44,7 @@ public class RailSettings {
     public final int parallelCount;
     public final float parallelGap;
 
-    public RailSettings(Gauge gauge, String track, TrackItems type, TrackItems pickType, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo, TrackDirection direction, ItemStack railBed, ItemStack railBedFill, boolean isPreview, boolean isGradeCrossing, int count, int spacing) {
+    public RailSettings(Gauge gauge, String track, TrackItems type, TrackItems pickType, int length, float degrees, float curvosity, TrackPositionType posType,  TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo, TrackDirection direction, ItemStack railBed, ItemStack railBedFill, boolean isPreview, boolean isGradeCrossing, int count, int spacing) {
         this(gauge, track, type, length, degrees, curvosity, posType, smoothing, direction, railBed, railBedFill, isPreview, isGradeCrossing, count, spacing, 1, 4);
     }
 

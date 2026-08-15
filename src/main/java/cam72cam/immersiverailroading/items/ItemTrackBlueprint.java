@@ -9,10 +9,7 @@ import cam72cam.immersiverailroading.library.GuiTypes;
 import cam72cam.immersiverailroading.registry.DefinitionManager;
 import cam72cam.immersiverailroading.registry.TrackDefinition;
 import cam72cam.immersiverailroading.tile.TileRailPreview;
-import cam72cam.immersiverailroading.util.TrackUtil;
 import cam72cam.immersiverailroading.track.BuilderParallel;
-import cam72cam.immersiverailroading.util.PlacementInfo;
-import cam72cam.immersiverailroading.util.BlockUtil;
 import cam72cam.immersiverailroading.util.*;
 import cam72cam.mod.entity.Player;
 import cam72cam.mod.item.*;
@@ -59,14 +56,12 @@ public class ItemTrackBlueprint extends CustomItem {
 	@Override
     public ClickResult onClickBlock(Player player, World world, Vec3i pos, Player.Hand hand, Facing facing, Vec3d hit) {
 		ItemStack stack = player.getHeldItem(hand);
-		PlacementInfo snapped = TrackUtil.getNeighborNode(player, player.getWorld(), pos, hit, stack);
 		RailSettings stackInfo = RailSettings.from(stack);
 
 		if (world.isServer && hand == Player.Hand.SECONDARY) {
 			ItemStack blockinfo = world.getItemStack(pos);
 			if (player.isCrouching()) {
 				stackInfo = stackInfo.with(b -> b.railBedFill = blockinfo);
-				stackInfo = stackInfo.with(b -> b.embankment = blockinfo);
 			} else {
 				stackInfo = stackInfo.with(b -> b.railBed = blockinfo);
 			}

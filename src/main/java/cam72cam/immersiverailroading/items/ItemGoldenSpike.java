@@ -55,31 +55,21 @@ public class ItemGoldenSpike extends CustomItem {
 			d.write();
 			Audio.playSound(world, pos, StandardSound.BLOCK_ANVIL_PLACE, SoundCategory.BLOCKS, 0.5f, 0.2f);
 		} else {
-
 			Vec3i tepos = new Data(held).pos;
 			if (tepos != null) {
 				TileRailPreview tr = world.getBlockEntity(tepos, TileRailPreview.class);
 				if (tr != null) {
-					PlacementInfo info = TrackUtil.getNeighborNode(player, player.getWorld(), pos, hit, tr.getItem());
-					boolean useSnapping = info != null && Config.ConfigDebug.enableTrackSnapping;
-					float yaw;
-					if(useSnapping) {
-						pos = new Vec3i(info.placementPosition);
-						hit = info.placementPosition.subtract(pos);
-						yaw = info.yaw;
-					} else {
-						pos = pos.up();
-						if (BlockUtil.canBeReplaced(world, pos.down(), true)) {
-							if (!BlockUtil.isIRRail(world, pos.down()) || world.getBlockEntity(pos.down(), TileRailBase.class).getRailHeight() < 0.5) {
-								pos = pos.down();
-							}
-						}
-						yaw = player.getRotationYawHead();
-					}
+					ItemStack stack = tr.getItem();
+					TrackSnapUtil.SnappedResult result = applySnapAndAdjust(player, world, pos, hit, stack, false);
+					pos = result.pos();
+					hit = result.hit();
+					float yaw = result.yaw();
+					boolean snapped = result.succeeded();
+
 					if (tr.isAboveRails()) {
 						tepos = tepos.down();
 					}
-					tr.setCustomInfo(new PlacementInfo(tr.getItem(), yaw, hit.subtract(0, hit.y, 0).add(pos).subtract(tepos), useSnapping));
+					tr.setCustomInfo(new PlacementInfo(stack, yaw, hit.subtract(0, hit.y, 0).add(pos).subtract(tepos), false, snapped));
 				}
 			}
 		}
