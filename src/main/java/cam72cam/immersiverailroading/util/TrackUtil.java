@@ -38,7 +38,7 @@ public class TrackUtil {
 
                         TileRail rail = (TileRail) tile;
                         if (rail == null || rail.info == null ||
-                                Math.abs(rail.getTrackGauge() - stackInfo.gauge.value()) > 1.0E-6) continue;
+                                Math.abs(rail.getTrackGauges() - stackInfo.gauge.value()) > 1.0E-6) continue;
 
                         BuilderBase builder = rail.info.getBuilder(world);
                         List<VecYPR> renderData = builder.getRenderData();
@@ -87,7 +87,7 @@ public class TrackUtil {
         }
 
         if (min <= hori) {
-            yaw = Config.ConfigDebug.trackSnapAngle ? (540 - yaw) % 360 : rotationYawHead;
+           // yaw = Config.ConfigDebug.trackSnapAngle ? (540 - yaw) % 360 : rotationYawHead;
             return new PlacementInfo(minPos, TrackDirection.NONE, yaw, null);
         }
         return null;

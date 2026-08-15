@@ -599,7 +599,7 @@ public class TrackGui implements IScreen {
 				updateEmbankmentControls();
 			}
 		};
-		int yEmbankment = bottomY;
+		yEmbankment = bottomY;
 		embankmentButton = new Button(screen, bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
 			@Override
 			public void onClick(Player.Hand hand) {
@@ -638,7 +638,7 @@ public class TrackGui implements IScreen {
 		embankmentGradientSlider.onSlider();
 		yEmbankment += height;
 
-		int yCutting = bottomY;
+		yCutting = bottomY;
 		cuttingCB = new CheckBox(screen, bottomX+2, yCutting+2, GuiText.SELECTOR_CUTTING.toString(), settings.cuttingEnabled) {
 			@Override
 			public void onClick(Player.Hand hand) {

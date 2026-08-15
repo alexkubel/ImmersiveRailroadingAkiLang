@@ -56,9 +56,7 @@ public class ItemTrackBlueprint extends CustomItem {
 	@Override
     public ClickResult onClickBlock(Player player, World world, Vec3i pos, Player.Hand hand, Facing facing, Vec3d hit) {
 		ItemStack stack = player.getHeldItem(hand);
-		PlacementInfo snapped = TrackUtil.getNeighborNode(player, player.getWorld(), pos, hit, stack);
 		RailSettings stackInfo = RailSettings.from(stack);
-		float yaw;
 
 		if (world.isServer && hand == Player.Hand.SECONDARY) {
 			ItemStack blockinfo = world.getItemStack(pos);
