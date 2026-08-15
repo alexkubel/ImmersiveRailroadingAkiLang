@@ -119,12 +119,12 @@ public class PlacementInfo {
 						default:
 					}
 					break;
-			}
-	}
+		}
+	
 		this.placementPosition = new Vec3d(new Vec3i(hit)).add(hitX, 0, hitZ);
 		this.direction = direction;
 		this.control = null;
-	
+	}
 
 	@Deprecated
 	public PlacementInfo(TagCompound nbt) {
