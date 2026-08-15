@@ -1,15 +1,13 @@
 package cam72cam.immersiverailroading.render.item;
 
+import cam72cam.immersiverailroading.items.nbt.RailSettings;
 import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.util.TrackUtil;
 import cam72cam.immersiverailroading.library.TrackItems;
 import cam72cam.immersiverailroading.render.ExpireableMap;
 import cam72cam.immersiverailroading.render.rail.RailRender;
-import cam72cam.immersiverailroading.tile.TileRailBase;
-import cam72cam.immersiverailroading.util.BlockUtil;
+import cam72cam.immersiverailroading.util.*;
 import cam72cam.mod.render.*;
-import cam72cam.immersiverailroading.util.PlacementInfo;
-import cam72cam.immersiverailroading.util.RailInfo;
 import cam72cam.mod.entity.Player;
 import cam72cam.mod.item.ItemStack;
 import cam72cam.mod.math.Vec3d;
@@ -18,19 +16,41 @@ import cam72cam.mod.render.opengl.BlendMode;
 import cam72cam.mod.render.opengl.RenderState;
 import cam72cam.mod.world.World;
 
+import static cam72cam.immersiverailroading.util.TrackSnapUtil.applySnapAndAdjust;
+
 public class TrackBlueprintItemModel implements ItemRender.IItemModel {
 	@Override
 	public StandardModel getModel(World world, ItemStack stack) {
 		return new StandardModel().addCustom((state, pt) -> TrackBlueprintItemModel.render(stack, world, state));
 	}
 	public static void render(ItemStack stack, World world, RenderState state) {
-		RailInfo info = new RailInfo(stack, new PlacementInfo(stack, 1, new Vec3d(0.5, 0.5, 0.5)), null);
-		info = info.withSettings(b -> b.length = 10);
+		RailInfo info = new RailInfo(stack, new PlacementInfo(stack, 1, new Vec3d(0.5, 0.5, 0.5), true, false), null);
+
+		if(info.settings.type.isTransitionCurve()) {
+			EndPointData.Mutable near = info.settings.nearPointData.mutable();
+			EndPointData.Mutable far = info.settings.farPointData.mutable();
+			if(Math.abs(near.radius) < 1e-6) {
+				far.radius = 10;
+				info = info.withSettings(b -> b.farPointData = far.immutable());
+			} else if(Math.abs(far.radius) < 1e-6) {
+				near.radius = 10;
+				info = info.withSettings(b -> b.nearPointData = near.immutable());
+			} else {
+				near.radius = 20;
+				far.radius = 10;
+				info = info.withSettings(b -> {
+					b.nearPointData = near.immutable();
+					b.farPointData = far.immutable();
+				});
+			}
+		} else {
+			info = info.withSettings(b -> b.length = 10);
+		}
 
 		state.cull_face(false);
 		state.lighting(false);
 
-		if (info.settings.type == TrackItems.TURN || info.settings.type == TrackItems.SWITCH) {
+		if (info.settings.type.hasQuarters()) {
 			state.translate(0, 0, -0.1 * (info.settings.degrees / 90 * 4));
 		}
 
@@ -38,8 +58,9 @@ public class TrackBlueprintItemModel implements ItemRender.IItemModel {
 
 		state.rotate(-90, 1, 0, 0);
 
+		int length = (int) info.settings.getValidSize();
+		double scale = 0.95 / length;
 
-		double scale = 0.95 / info.settings.length;
 		if (info.settings.type == TrackItems.CROSSING) {
 			scale = 0.95 / 3;
 		}
@@ -58,32 +79,18 @@ public class TrackBlueprintItemModel implements ItemRender.IItemModel {
 	private static ExpireableMap<String, RailInfo> infoCache = new ExpireableMap<>();
 	public static void renderMouseover(Player player, ItemStack stack, Vec3i pos, Vec3d vec, RenderState state, float partialTicks) {
 		World world = player.getWorld();
-		Vec3d cameraPos = GlobalRender.getCameraPos(partialTicks);
 
-		PlacementInfo closeEnd = TrackUtil.getNeighborNode(player, world, pos, vec.subtract(pos), stack);
-		boolean useSnapping = closeEnd != null && Config.ConfigDebug.enableTrackSnapping;
+		ItemStack snappedStack = stack.copy();
+		TrackSnapUtil.SnappedResult result = applySnapAndAdjust(player, world, pos, hit, snappedStack, true);
+		pos = result.pos();
+		hit = result.hit();
+		float yaw = result.yaw();
+		boolean snapped = result.succeeded();
 
-		Vec3d hit;
-		float yaw;
+		PlacementInfo placementInfo = new PlacementInfo(snappedStack, yaw, hit.subtract(0, hit.y, 0), true, snapped);
+		placementInfo = placementInfo.offset(RailSettings.from(snappedStack).nearPointData.offset());
+		RailInfo info = new RailInfo(snappedStack, placementInfo, null);
 
-		if (!useSnapping) {
-			hit = vec.subtract(pos);
-			pos = pos.up();
-
-			if (BlockUtil.canBeReplaced(world, pos.down(), true)) {
-				if (!BlockUtil.isIRRail(world, pos.down()) || world.getBlockEntity(pos.down(), TileRailBase.class).getRailHeight() < 0.5) {
-					pos = pos.down();
-				}
-			}
-
-			yaw = player.getRotationYawHead();
-		} else {
-			pos = new Vec3i(closeEnd.placementPosition);
-			hit = closeEnd.placementPosition.subtract(pos);
-			yaw = closeEnd.yaw;
-		}
-
-		RailInfo info = new RailInfo(stack, new PlacementInfo(stack, yaw, hit.subtract(0, hit.y, 0), useSnapping), null);
 		String key = info.uniqueID + info.placementInfo.placementPosition;
 		RailInfo cached = infoCache.get(key);
 		if (cached != null) {

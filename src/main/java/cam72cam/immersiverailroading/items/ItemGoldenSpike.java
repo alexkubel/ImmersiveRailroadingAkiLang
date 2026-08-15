@@ -3,12 +3,12 @@ package cam72cam.immersiverailroading.items;
 import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.IRBlocks;
 import cam72cam.immersiverailroading.ImmersiveRailroading;
+import cam72cam.immersiverailroading.items.nbt.RailSettings;
 import cam72cam.immersiverailroading.library.GuiTypes;
-import cam72cam.immersiverailroading.tile.TileRailBase;
 import cam72cam.immersiverailroading.tile.TileRailPreview;
 import cam72cam.immersiverailroading.util.TrackUtil;
-import cam72cam.immersiverailroading.util.BlockUtil;
 import cam72cam.immersiverailroading.util.PlacementInfo;
+import cam72cam.immersiverailroading.util.TrackSnapUtil;
 import cam72cam.mod.item.*;
 import cam72cam.mod.serialization.TagField;
 import cam72cam.mod.sound.Audio;
@@ -22,6 +22,8 @@ import cam72cam.mod.util.Facing;
 
 import java.util.Collections;
 import java.util.List;
+
+import static cam72cam.immersiverailroading.util.TrackSnapUtil.applySnapAndAdjust;
 
 public class ItemGoldenSpike extends CustomItem {
 	public ItemGoldenSpike() {
@@ -56,26 +58,17 @@ public class ItemGoldenSpike extends CustomItem {
 			if (tepos != null) {
 				TileRailPreview tr = world.getBlockEntity(tepos, TileRailPreview.class);
 				if (tr != null) {
-					PlacementInfo info = TrackUtil.getNeighborNode(player, player.getWorld(), pos, hit, tr.getItem());
-					boolean useSnapping = info != null && Config.ConfigDebug.enableTrackSnapping;
-					float yaw;
-					if(useSnapping) {
-						pos = new Vec3i(info.placementPosition);
-						hit = info.placementPosition.subtract(pos);
-						yaw = info.yaw;
-					} else {
-						pos = pos.up();
-						if (BlockUtil.canBeReplaced(world, pos.down(), true)) {
-							if (!BlockUtil.isIRRail(world, pos.down()) || world.getBlockEntity(pos.down(), TileRailBase.class).getRailHeight() < 0.5) {
-								pos = pos.down();
-							}
-						}
-						yaw = player.getRotationYawHead();
-					}
+					ItemStack stack = tr.getItem();
+					TrackSnapUtil.SnappedResult result = applySnapAndAdjust(player, world, pos, hit, stack, false);
+					pos = result.pos();
+					hit = result.hit();
+					float yaw = result.yaw();
+					boolean snapped = result.succeeded();
+
 					if (tr.isAboveRails()) {
 						tepos = tepos.down();
 					}
-					tr.setCustomInfo(new PlacementInfo(tr.getItem(), yaw, hit.subtract(0, hit.y, 0).add(pos).subtract(tepos), useSnapping));
+					tr.setCustomInfo(new PlacementInfo(stack, yaw, hit.subtract(0, hit.y, 0).add(pos).subtract(tepos), false, snapped));
 				}
 			}
 		}
