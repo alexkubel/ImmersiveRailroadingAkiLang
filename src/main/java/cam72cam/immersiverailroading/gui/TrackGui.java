@@ -792,7 +792,7 @@ public class TrackGui implements IScreen {
 		bedTypeButton.setVisible(trackPage);
 		bedFillButton.setVisible(trackPage);
 		bedFillWidthSlider.setVisible(trackPage && !settings.railBedFill.isEmpty());
-		posTypeButton.setVisible(trackPage);
+		
 		isPreviewCB.setVisible(trackPage);
 		isGradeCrossingCB.setVisible(trackPage);
 
