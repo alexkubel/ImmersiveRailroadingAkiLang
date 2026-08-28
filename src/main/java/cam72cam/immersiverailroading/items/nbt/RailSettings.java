@@ -63,7 +63,7 @@ public class RailSettings {
         int cuttingOffset,
         int cuttingHeight,
         float cuttingGradient, boolean isPreview, boolean isGradeCrossing, 
-        int count, int spacing, int parallelCount, float parallelGap) {
+        int transfertableEntryCount, int transfertableEntrySpacing, int parallelCount, float parallelGap) {
         this (
             gauge, track, type, pickType, length, degrees, curvosity, smoothing, nearPointData, farPointData, rollAndOffsetInfo, 
             pickRollAndOffsetInfo, direction, railBed,railBedFill,
@@ -78,19 +78,19 @@ public class RailSettings {
                     cuttingGradient,
                     isPreview,
                     isGradeCrossing,
-                    count,
-                    spacing,
+                    transfertableEntryCount,
+                    transfertableEntrySpacing,
                     parallelCount,
                     parallelGap);
  }
 
-    public RailSettings(Gauge gauge, String track, TrackItems type, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo,
-        TrackDirection direction, ItemStack railBed, ItemStack railBedFill, int railBedFillWidth,  boolean isPreview, boolean isGradeCrossing, 
-        int count, int spacing, int parallelCount, float parallelGap) {
-        this(gauge, track, type, length, degrees, curvosity, smoothing, nearPointData, farPointData,rollAndOffsetInfo,pickRollAndOffsetInfo, 
-            direction, railBed, railBedFill, railBedFillWidth, isPreview, isGradeCrossing, 
-            count, spacing, parallelCount, parallelGap);
-    }
+//    public RailSettings(Gauge gauge, String track, TrackItems type, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo,
+//        TrackDirection direction, ItemStack railBed, ItemStack railBedFill, int railBedFillWidth,  boolean isPreview, boolean isGradeCrossing, 
+//        int count, int spacing, int parallelCount, float parallelGap) {
+//        this(gauge, track, type, length, degrees, curvosity, smoothing, nearPointData, farPointData,rollAndOffsetInfo,pickRollAndOffsetInfo, 
+//            direction, railBed, railBedFill, railBedFillWidth, isPreview, isGradeCrossing, 
+//            count, spacing, parallelCount, parallelGap);
+//    }
 
     public RailSettings(
             Gauge gauge,
@@ -105,8 +105,10 @@ public class RailSettings {
             EndPointData farPointData, 
             RollAndOffsetInfo rollAndOffsetInfo, 
             RollAndOffsetInfo pickRollAndOffsetInfo, 
-            TrackDirection direction, ItemStack railBed, 
-            ItemStack railBedFill, int railBedFillWidth, 
+            TrackDirection direction, 
+            ItemStack railBed, 
+            ItemStack railBedFill, 
+            int railBedFillWidth, 
             ItemStack embankment, 
             int embankmentOffset, 
             int embankmentHeight, 
@@ -117,7 +119,7 @@ public class RailSettings {
             float cuttingGradient, 
             boolean isPreview, 
             boolean isGradeCrossing, 
-            int count, int spacing, 
+            int transfertableEntryCount, int transfertableEntrySpacing, 
             int parallelCount, 
             float parallelGap) {
         this.gauge = gauge;
@@ -146,8 +148,8 @@ public class RailSettings {
         this.isPreview = isPreview;
         this.isGradeCrossing = isGradeCrossing;
         this.curvosity = curvosity;
-        this.transfertableEntryCount = count;
-        this.transfertableEntrySpacing = spacing;
+        this.transfertableEntryCount = transfertableEntryCount;
+        this.transfertableEntrySpacing = transfertableEntrySpacing;
         this.parallelCount = parallelCount;
         this.parallelGap = parallelGap;
     }
