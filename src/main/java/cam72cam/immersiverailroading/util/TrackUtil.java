@@ -38,7 +38,7 @@ public class TrackUtil {
 
                         TileRail rail = (TileRail) tile;
                         if (rail == null || rail.info == null ||
-                                Math.abs(rail.getTrackGauges() - stackInfo.gauge.value()) > 1.0E-6) continue;
+                                Math.abs(rail.getTrackGauges()[0] - stackInfo.gauge.value()) > 1.0E-6) continue;
 
                         BuilderBase builder = rail.info.getBuilder(world);
                         List<VecYPR> renderData = builder.getRenderData();
