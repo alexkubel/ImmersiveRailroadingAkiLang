@@ -45,13 +45,10 @@ public class RailSettings {
     public final float parallelGap;
 
     public RailSettings(
-        Gauge gauge, String track, TrackItems type, TrackItems pickType, int length, float degrees, float curvosity, 
-        TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo, 
-        TrackDirection direction, ItemStack railBed, ItemStack railBedFill, int railBedFillWidth, 
-        boolean isPreview, boolean isGradeCrossing, int count, int spacing) {
+        Gauge gauge, String track, TrackItems type, TrackItems pickType, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo, TrackDirection direction, ItemStack railBed, ItemStack railBedFill, int railBedFillWidth, boolean isPreview, boolean isGradeCrossing, int count, int spacing) {
         this(gauge, track, type, pickType, length, degrees, curvosity,
-            smoothing, nearPointData, farPointData, rollAndOffsetInfo, pickRollAndOffsetInfo, 
-            direction, railBed, railBedFill, railBedFillWidth, 
+            smoothing, nearPointData, farPointData, rollAndOffsetInfo, 
+            pickRollAndOffsetInfo, direction, railBed, railBedFill, railBedFillWidth, ItemStack.EMPTY,0,1,1,false,0,4,1,
             isPreview, isGradeCrossing, count, spacing, 1, 4);
     } 
     public RailSettings(Gauge gauge, String track, TrackItems type, TrackItems pickType, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo,
