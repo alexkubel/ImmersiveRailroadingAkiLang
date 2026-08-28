@@ -450,7 +450,6 @@ public class RailInfo {
 			RailSettings settings = new RailSettings(
 				gauge, "default", 
 				type, 
-				pickType, 
 				length, 
 				quarters / 4F * 90, 
 				1, 
