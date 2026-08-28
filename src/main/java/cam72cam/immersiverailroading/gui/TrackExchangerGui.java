@@ -158,20 +158,25 @@ public class TrackExchangerGui implements IScreen {
 
 		int baseScale = 8;
 		// This could be more efficient...
-		RailSettings settings = new RailSettings(gauge,
+		RailSettings settings = new RailSettings(
+			gauge,
 				track,
-				TrackItems.STRAIGHT, TrackItems.STRAIGHT,
+				TrackItems.STRAIGHT, 
+				TrackItems.STRAIGHT,
 				10,
 				0,
 				1,
 				TrackSmoothing.BOTH,
-				new EndPointData(0), new EndPointData(10),
+				new EndPointData(0),
+				new EndPointData(10),
                 null,null,
 				TrackDirection.NONE,
 				railBed,
 				ItemStack.EMPTY,
 				false,
 				false,
+				1,
+				1,
 				1,
 				1
 		);
