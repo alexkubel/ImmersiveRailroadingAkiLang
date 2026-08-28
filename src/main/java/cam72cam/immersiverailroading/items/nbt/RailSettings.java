@@ -92,7 +92,34 @@ public class RailSettings {
             count, spacing, parallelCount, parallelGap);
     }
 
-    public RailSettings(Gauge gauge, String track, TrackItems type, int length, float degrees, float curvosity, TrackSmoothing smoothing,EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo, TrackDirection direction, ItemStack railBed, ItemStack railBedFill, int railBedFillWidth, ItemStack embankment, int embankmentOffset, int embankmentHeight, float embankmentGradient, boolean cuttingEnabled, int cuttingOffset, int cuttingHeight, float cuttingGradient, boolean isPreview, boolean isGradeCrossing, int count, int spacing, int parallelCount, float parallelGap) {
+    public RailSettings(
+            Gauge gauge,
+            String track, 
+            TrackItems type, 
+            TrackItems pickType,
+            int length, 
+            float degrees, 
+            float curvosity, 
+            TrackSmoothing smoothing,
+            EndPointData nearPointData, 
+            EndPointData farPointData, 
+            RollAndOffsetInfo rollAndOffsetInfo, 
+            RollAndOffsetInfo pickRollAndOffsetInfo, 
+            TrackDirection direction, ItemStack railBed, 
+            ItemStack railBedFill, int railBedFillWidth, 
+            ItemStack embankment, 
+            int embankmentOffset, 
+            int embankmentHeight, 
+            float embankmentGradient, 
+            boolean cuttingEnabled, 
+            int cuttingOffset, 
+            int cuttingHeight, 
+            float cuttingGradient, 
+            boolean isPreview, 
+            boolean isGradeCrossing, 
+            int count, int spacing, 
+            int parallelCount, 
+            float parallelGap) {
         this.gauge = gauge;
         this.track = track;
         this.type = type;
