@@ -21,8 +21,9 @@ import java.util.*;
  */
 public class NavMesh {
     public static final float RANGE = 0.5f;
-
+    private final boolean hasNavMesh;
     public final BVHNode root;
+    public BVHNode collisionRoot;
     //Edges that are only connected to 1 face, useful when checking holes
     private final List<Edge> floorBoundaryEdges;
     // Theoretically this could be much lower. IR floor meshes probably won't use the whole depth, but who knows
@@ -30,6 +31,7 @@ public class NavMesh {
     private static final int LEAF_SIZE = 8;
 
     public NavMesh(EntityRollingStockDefinition definition) {
+        
         StockModel<?, ?> model = definition.getModel();
         List<OBJFace> floorFaces;
         if (model.floor != null) {
@@ -40,11 +42,13 @@ public class NavMesh {
             definition.passengerCompartmentLength = bounds.x/2;
             definition.passengerCompartmentWidth = bounds.z/2;
             definition.passengerCenter = model.floor.center;
+            hasNavMesh = true;
         } else {
             floorFaces = legacyFloorFaces(definition);
             root = buildBVH(new ArrayList<>(floorFaces), 0);
+            hasNavMesh = false;
         }
-
+    this.collisionRoot = buildBVH(collision, 0);
         floorBoundaryEdges = computeBoundaryEdges(floorFaces);
     }
 
@@ -56,6 +60,10 @@ public class NavMesh {
             sub.forEach(a -> floor.add(a.asOBJFace()));
         });
         return floor;
+    }
+
+    public boolean hasNavMesh() {
+        return hasNavMesh;
     }
 
     private List<OBJFace> legacyFloorFaces(EntityRollingStockDefinition def) {
