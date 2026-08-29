@@ -15,6 +15,7 @@ import cam72cam.immersiverailroading.gui.overlay.Readouts;
 import cam72cam.immersiverailroading.library.*;
 import cam72cam.immersiverailroading.model.StockModel;
 import cam72cam.immersiverailroading.model.components.ModelComponent;
+import cam72cam.immersiverailroading.model.part.Door;
 import cam72cam.mod.ModCore;
 import cam72cam.mod.entity.EntityRegistry;
 import cam72cam.mod.entity.boundingbox.IBoundingBox;
@@ -84,7 +85,6 @@ public abstract class EntityRollingStockDefinition {
     private double rearBounds;
     private double heightBounds;
     private double widthBounds;
-    public Vec3d passengerCenter;
     public Double passengerCompartmentLength;
     public Double passengerCompartmentWidth;
     private double weight;
