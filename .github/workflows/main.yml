@@ -3,19 +3,31 @@ name: Immersive Railroading Build Pipeline
 on:
   push:
     branches:
-      - 'master' 
+      - 'testbuild' 
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        branch: [
+        branch: [1.7.10-forge,
+                 1.10.2-forge,
+                 1.11.2-forge,
                  1.12.2-forge,
+                 1.14.4-forge,
+                 1.15.2-forge,
                  1.16.5-forge,
+                 1.17.1-forge,
+                 1.18.2-forge,
+                 1.19.4-forge,
                  1.20.1-forge,
                  1.21.1-neoforge,
-        ]
+                 1.21.4-neoforge,
+                ]
+    env:
+        BUILDVERSION: ${{ github.run_number }}
+
     steps:
     - name: checkout repository
       uses: actions/checkout@v5
@@ -51,11 +63,19 @@ jobs:
     - name: Gradle build
       run: ./gradlew build
 
-    # - name: Gradle publish
-    #  env:
-    #    MAVENCI_PASS: ${{ secrets.MAVENCI_PASS }}
-    #  run: ./gradlew publish
-    - uses: actions/upload-artifact@v6
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v6
       with:
         name: Immersive Railroading ${{matrix.branch}}
         path: build/libs/ImmersiveRailroading-${{matrix.branch}}-*
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ github.run_number }}
+        name: Testbuild v${{ github.run_number }}
+        draft: false
+        prerelease: true
+        files: build/libs/ImmersiveRailroading-${{ matrix.branch }}-AkiBuild-v${{ github.run_number }}.jar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
