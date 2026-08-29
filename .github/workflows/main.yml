@@ -5,6 +5,7 @@ on:
     branches:
       - 'master' 
       - 'testbuild'
+      - 'main'
 
 jobs:
   build:
