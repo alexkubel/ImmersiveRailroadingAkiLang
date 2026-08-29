@@ -67,16 +67,9 @@ public class TrackExtraGui implements IScreen {
     private TextField zOffsetHandleXLenInput;
     private Slider ArcLenFactorSlider;
     private Button insertOrDeletePointButton;
-    private Button editLeftButton;
-    private Button resetAllButton;
     private Button rollOffsetTypeButton;
     private Button railInfoLabel;
-    private CheckBox rollEffectTileCB;
     private CheckBox railBlockNormalCB;
-    private CheckBox degreeModeCB;
-    private CheckBox offsetVertByNormalCB;
-//    private Button wayCircleButton;
-    private Button TrackGuiButton;
     public TrackExtraGui() {
         this(MinecraftClient.getPlayer().getHeldItem(Player.Hand.PRIMARY), null);
     }
@@ -167,14 +160,14 @@ public class TrackExtraGui implements IScreen {
                                                    }
                                                });
 
-        resetAllButton = new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50, ytop, 50, height,
+        new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50, ytop, 50, height,
                                     GuiText.TRACK_EXTRA_RESET.toString(), (_, _) -> {
             edited = true;
             rollAndOffsetInfoCache.resetAll();
             updateSliderRelated();
         });
 
-        editLeftButton = new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50 * 2, ytop, 50, height,
+        new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50 * 2, ytop, 50, height,
                                     GuiText.TRACK_EXTRA_EDIT_LEFT.toString(), (_, self) -> {
             editLeft = !editLeft;
             if(editLeft) {
@@ -185,7 +178,7 @@ public class TrackExtraGui implements IScreen {
             updateAllCurveInfoDisplay();
         });
 
-        TrackGuiButton = new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50 * 3, ytop, 50, height,
+        new Button(screen, GUIHelpers.getScreenWidth() / 2 - width + 50 * 3, ytop, 50, height,
                                     GuiText.TRACK_EXTRA_TO_MAIN.toString(), (_, _) -> {
             targetGuiOpenType = 0;
             onClose();
@@ -199,7 +192,7 @@ public class TrackExtraGui implements IScreen {
         //Back to top
         ytop = -GUIHelpers.getScreenHeight() / 4;
 
-        rollEffectTileCB = new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 - 85 - 75, ytop + 1,
+        new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 - 85 - 75, ytop + 1,
                                         GuiText.SELECTOR_ROLL_EFFECT_TILE.toString(), rollAndOffsetInfoCache.rollEffectTile,
                                         (_, self) -> {
                                             edited = true;
@@ -226,7 +219,7 @@ public class TrackExtraGui implements IScreen {
                                   });
         railBlockNormalCB.setVisible(false);//modifiable vanilla block model later
 
-        degreeModeCB = new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 + 2, ytop + 1,
+        new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 + 2, ytop + 1,
                                            GuiText.SELECTOR_DEGREE_MODE.toString(), rollAndOffsetInfoCache.degreeMode,
                                            (_, self) -> {
                                                edited = true;
@@ -234,7 +227,7 @@ public class TrackExtraGui implements IScreen {
                                                rollMax = rollAndOffsetInfoCache.degreeMode ? 45 : 60;//180 for degree mode later
                                            });
 
-        offsetVertByNormalCB = new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 - 85 - 75, ytop + 12,
+        new CheckBox(screen, GUIHelpers.getScreenWidth() / 2 - width + 30 - 85 - 75, ytop + 12,
                 GuiText.SELECTOR_OFFSET_VERT_BY_NORMAL_MODE.toString(), rollAndOffsetInfoCache.offsetVertByNormal,
                 (_, self) -> {
                     edited = true;

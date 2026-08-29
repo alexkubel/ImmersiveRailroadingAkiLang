@@ -2,8 +2,9 @@ package cam72cam.immersiverailroading;
 
 import cam72cam.immersiverailroading.entity.*;
 import cam72cam.immersiverailroading.entity.physics.chrono.ServerChronoState;
-import cam72cam.immersiverailroading.gui.AugmentFilterGUI;
+import cam72cam.immersiverailroading.gui.RailAugmentGUI;
 import cam72cam.immersiverailroading.gui.overlay.GuiBuilder;
+import cam72cam.immersiverailroading.gui.overlay.RemoteOverlay;
 import cam72cam.immersiverailroading.items.ItemPaintBrush;
 import cam72cam.immersiverailroading.library.*;
 import cam72cam.immersiverailroading.model.StockModel;
@@ -11,17 +12,22 @@ import cam72cam.immersiverailroading.multiblock.*;
 import cam72cam.immersiverailroading.net.*;
 import cam72cam.immersiverailroading.registry.DefinitionManager;
 import cam72cam.immersiverailroading.registry.EntityRollingStockDefinition;
+import cam72cam.immersiverailroading.registry.LuaAugmentDefinition;
+import cam72cam.immersiverailroading.remotecontrol.RemoteControlData;
+import cam72cam.immersiverailroading.remotecontrol.WirelessRemotecontrolClient;
+import cam72cam.immersiverailroading.remotecontrol.WirelessRemotecontrolServer;
+import cam72cam.immersiverailroading.render.CustomParticle;
 import cam72cam.immersiverailroading.render.SmokeParticle;
 import cam72cam.immersiverailroading.render.block.RailBaseModel;
 import cam72cam.immersiverailroading.render.item.*;
 import cam72cam.immersiverailroading.render.multiblock.MBBlueprintRender;
 import cam72cam.immersiverailroading.render.multiblock.TileMultiblockRender;
 import cam72cam.immersiverailroading.render.rail.RailPreviewRender;
+import cam72cam.immersiverailroading.script.sound.SoundConfig;
+import cam72cam.immersiverailroading.textfield.library.TextFieldClientPacket;
+import cam72cam.immersiverailroading.textfield.library.TextFieldPacket;
 import cam72cam.immersiverailroading.thirdparty.CompatLoader;
-import cam72cam.immersiverailroading.tile.TileMultiblock;
-import cam72cam.immersiverailroading.tile.TileRail;
-import cam72cam.immersiverailroading.tile.TileRailGag;
-import cam72cam.immersiverailroading.tile.TileRailPreview;
+import cam72cam.immersiverailroading.tile.*;
 import cam72cam.immersiverailroading.util.IRFuzzy;
 import cam72cam.mod.MinecraftClient;
 import cam72cam.mod.ModCore;
@@ -41,15 +47,22 @@ import cam72cam.mod.resource.Identifier;
 import cam72cam.mod.sound.Audio;
 import cam72cam.mod.text.Command;
 
+import java.io.IOException;
+import java.util.UUID;
 import java.util.Random;
 import java.util.function.Function;
 
+import static cam72cam.immersiverailroading.gui.helpers.MouseHelper.mouseClicked;
+import static cam72cam.immersiverailroading.gui.helpers.MouseHelper.updateMousePosition;
+
 public class ImmersiveRailroading extends ModCore.Mod {
-    public static final String MODID = "immersiverailroading";
+	public static final String MODID = "immersiverailroading";
 
 	public static final Random RANDOM = new Random();
 	public static final int ENTITY_SYNC_DISTANCE = 512;
 	private static ImmersiveRailroading instance;
+	
+	private static RemoteOverlay remoteGui;
 
 	public ImmersiveRailroading() {
 		instance = this;
@@ -60,7 +73,8 @@ public class ImmersiveRailroading extends ModCore.Mod {
 		return MODID;
 	}
 
-	@Override
+	@SuppressWarnings("incomplete-switch")
+    @Override
 	public void commonEvent(ModEvent event) {
 		CompatLoader.common(event);
 
@@ -86,10 +100,18 @@ public class ImmersiveRailroading extends ModCore.Mod {
 				Packet.register(ClientPartDragging.SeatPacket::new, PacketDirection.ClientToServer);
 				Packet.register(GuiBuilder.ControlChangePacket::new, PacketDirection.ClientToServer);
 				Packet.register(ItemPaintBrush.PaintBrushPacket::new, PacketDirection.ClientToServer);
-				Packet.register(AugmentFilterGUI.AugmentFilterChangePacket::new, PacketDirection.ClientToServer);
+				Packet.register(TileRailBase.AugmentPacket::new, PacketDirection.ClientToServer);
+				Packet.register(TextFieldPacket::new, PacketDirection.ClientToServer);
+				Packet.register(TextFieldClientPacket::new, PacketDirection.ServerToClient);
+				Packet.register(SoundConfig.SoundPacket::new, PacketDirection.ServerToClient);
+				Packet.register(RailAugmentGUI.AugmentFilterChangePacket::new, PacketDirection.ClientToServer);
+				Packet.register(RemoteControlServerPacket::new, PacketDirection.ServerToClient);
+				Packet.register(RemoteControlClientPacket::new, PacketDirection.ClientToServer);
+				Packet.register(RemoteControlActivePacket::new, PacketDirection.ClientToServer);
 
 				ServerChronoState.register();
-
+				WirelessRemotecontrolServer.init();
+				
 				IRBlocks.register();
 				IRItems.register();
 				GuiTypes.register();
@@ -106,6 +128,7 @@ public class ImmersiveRailroading extends ModCore.Mod {
 				ConfigFile.sync(ConfigPermissions.class);
 
 				DefinitionManager.initDefinitions();
+				LuaAugmentDefinition.loadJsonData();
 				break;
 			case FINALIZE:
 				Permissions.register();
@@ -121,7 +144,8 @@ public class ImmersiveRailroading extends ModCore.Mod {
 
 	}
 
-	@Override
+	@SuppressWarnings("incomplete-switch")
+    @Override
 	public void clientEvent(ModEvent event) {
 		switch (event) {
 			case CONSTRUCT:
@@ -137,6 +161,7 @@ public class ImmersiveRailroading extends ModCore.Mod {
 				ItemRender.register(IRItems.ITEM_TRACK_BLUEPRINT, new TrackBlueprintItemModel());
 				ItemRender.register(IRItems.ITEM_ROLLING_STOCK_COMPONENT, new StockItemComponentModel());
 				ItemRender.register(IRItems.ITEM_ROLLING_STOCK, new StockItemModel());
+				ItemRender.register(IRItems.ITEM_MULTIPLE_UNIT, new StockItemModel());
 				ItemRender.register(IRItems.ITEM_LARGE_WRENCH, ObjItemRender.getModelFor(new Identifier(MODID, "models/item/wrench/wrench.obj"), new Vec3d(0.5, 0, 0.5), 2));
 				ItemRender.register(IRItems.ITEM_CONDUCTOR_WHISTLE, ObjItemRender.getModelFor(new Identifier(MODID, "models/item/whistle.obj"), new Vec3d(0.5, 0.75, 0.5), 0.1f));
 				ItemRender.register(IRItems.ITEM_GOLDEN_SPIKE, ObjItemRender.getModelFor(new Identifier(MODID, "models/item/goldenspike/goldenspike.obj"), new Vec3d(0.5, 0.5, 0.5), 0.1f));
@@ -146,6 +171,8 @@ public class ImmersiveRailroading extends ModCore.Mod {
 				ItemRender.register(IRItems.ITEM_RADIO_CONTROL_CARD, new Identifier(MODID, "items/radio_card"));
 				ItemRender.register(IRItems.ITEM_MANUAL, new Identifier(MODID, "items/engineerslexicon"));
 				ItemRender.register(IRItems.ITEM_TRACK_EXCHANGER, new TrackExchangerModel());
+				ItemRender.register(IRItems.ITEM_TYPEWRITER, ObjItemRender.getModelFor(new Identifier(MODID, "models/item/typewriter.obj"), new Vec3d(0.5, 0.5, 0.5), 1 ));
+				ItemRender.register(IRItems.ITEM_WIRELESS_REMOTECONTROL, ObjItemRender.getModelFor(new Identifier(MODID, "models/item/wireless_remotecontrol/wireless_remotecontrol.obj"), new Vec3d(0.5, 0.5, 0.5), 1));
 
 				IEntityRender<EntityMoveableRollingStock> stockRender = new IEntityRender<EntityMoveableRollingStock>() {
 					@Override
@@ -172,8 +199,15 @@ public class ImmersiveRailroading extends ModCore.Mod {
 				EntityRenderer.register(Tender.class, stockRender);
 				EntityRenderer.register(HandCar.class, stockRender);
 
-
-				Function<KeyTypes, Runnable> onKeyPress = type -> () -> new KeyPressPacket(type).sendToServer();
+				Function<KeyTypes, Runnable> onKeyPress = type -> () -> {
+					UUID target = WirelessRemotecontrolClient.getLoco();
+					if (target != null) {
+						new KeyPressPacket(type, target).sendToServer(); // Remote control
+					}
+					else if (MinecraftClient.getPlayer().getRiding() instanceof EntityRollingStock) {
+						new KeyPressPacket(type).sendToServer();
+					}
+				};
 				Keyboard.registerKey("ir_keys.increase_throttle", KeyCode.NUMPAD8, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.THROTTLE_UP));
 				Keyboard.registerKey("ir_keys.zero_throttle", KeyCode.NUMPAD5, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.THROTTLE_ZERO));
 				Keyboard.registerKey("ir_keys.decrease_throttle", KeyCode.NUMPAD2, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.THROTTLE_DOWN));
@@ -191,14 +225,21 @@ public class ImmersiveRailroading extends ModCore.Mod {
 				Keyboard.registerKey("ir_keys.start_stop_engine", KeyCode.ADD, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.START_STOP_ENGINE));
 				Keyboard.registerKey("ir_keys.bell", KeyCode.SUBTRACT, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.BELL));
 				Keyboard.registerKey("ir_keys.config", KeyCode.DIVIDE, "key.categories." + ImmersiveRailroading.MODID, () -> GuiTypes.CONFIG.open(MinecraftClient.getPlayer()));
-
+				Keyboard.registerKey("ir_keys.sanding", KeyCode.DECIMAL, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.SANDING));
+				Keyboard.registerKey("ir_keys.increase_hand_brake", KeyCode.COMMA, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.HAND_BRAKE_UP));
+                Keyboard.registerKey("ir_keys.zero_hand_brake", KeyCode.PERIOD, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.HAND_BRAKE_ZERO));
+                Keyboard.registerKey("ir_keys.decrease_hand_brake", KeyCode.MINUS, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.HAND_BRAKE_DOWN));
+                Keyboard.registerKey("ir_keys.increase_dynamic_brake", KeyCode.NUMPAD7, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.DYNAMIC_BRAKE_UP));
+                Keyboard.registerKey("ir_keys.zero_dynamic_brake", KeyCode.NUMPAD4, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.DYNAMIC_BRAKE_ZERO));
+                Keyboard.registerKey("ir_keys.decrease_dynamic_brake", KeyCode.NUMPAD1, "key.categories." + ImmersiveRailroading.MODID, onKeyPress.apply(KeyTypes.DYNAMIC_BRAKE_DOWN));
+				
 				Audio.setSoundChannels(ConfigSound.customAudioChannels);
 				break;
-			case SETUP:
+			case SETUP:				
 				GlobalRender.registerItemMouseover(IRItems.ITEM_TRACK_BLUEPRINT, TrackBlueprintItemModel::renderMouseover);
 				GlobalRender.registerItemMouseover(IRItems.ITEM_MANUAL, MBBlueprintRender::renderMouseover);
 
-				GlobalRender.registerOverlay((state, pt) -> {
+				GlobalRender.registerOverlay((state, _) -> {
 					Entity riding = MinecraftClient.getPlayer().getRiding();
 					if (!(riding instanceof EntityRollingStock)) {
 						return;
@@ -208,27 +249,61 @@ public class ImmersiveRailroading extends ModCore.Mod {
 						stock.getDefinition().getOverlay().render(state, stock);
 					}
 				});
+				// Remote Overlay
+				try {
+				    remoteGui = RemoteOverlay.parse(new Identifier(ImmersiveRailroading.MODID, "gui/default/fbg.json"));
+				} catch (IOException e) {
+				    e.printStackTrace();
+				}
+
+				GlobalRender.registerOverlay((state, _) -> {
+				    UUID activeLoco = WirelessRemotecontrolClient.getLoco();
+			        if (activeLoco == null || remoteGui == null) {
+			            return;
+			        }
+					RemoteControlData data = WirelessRemotecontrolClient.getData();
+			        if(data == null) {
+			            return;
+			        }
+			        remoteGui.render(state, data);
+				});
 
 				ClientEvents.MOUSE_GUI.subscribe(evt -> {
 					if (!MinecraftClient.isReady()) {
 						return true;
 					}
+
+					updateMousePosition(evt);
+					mouseClicked(evt.x, evt.y, evt.button);
+					
+					// remote control
+					UUID activeLoco = WirelessRemotecontrolClient.getLoco();
+				    if (activeLoco != null) {
+				        RemoteControlData data = WirelessRemotecontrolClient.getData();
+				        if (data != null) {
+				            return remoteGui.click(evt, data);
+				        }
+				    }
+				    //
+
 					Entity riding = MinecraftClient.getPlayer().getRiding();
 					if (!(riding instanceof EntityRollingStock)) {
 						return true;
 					}
-					EntityRollingStock stock = (EntityRollingStock) riding;
-					if (stock.getDefinition().getOverlay() != null) {
-						return stock.getDefinition().getOverlay().click(evt, stock);
-					}
-					return true;
-				});
+                    EntityRollingStock stock = (EntityRollingStock) riding;
+                    if (stock.getDefinition().getOverlay() != null) {
+                        return stock.getDefinition().getOverlay().click(evt, stock);
+                    }
+                    return true;
+                });
 
 				ClientEvents.TICK.subscribe(GuiBuilder::onClientTick);
 				ClientEvents.TICK.subscribe(EntityRollingStockDefinition.ControlSoundsDefinition::cleanupStoppedSounds);
-
+				ClientEvents.TICK.subscribe(WirelessRemotecontrolClient::onClientTick);
+	                                         
 				Particles.SMOKE = Particle.register(SmokeParticle::new, SmokeParticle::renderAll);
-
+				Particles.CUSTOM = Particle.register(CustomParticle::new, CustomParticle::renderAll);
+	
 				ClientPartDragging.register();
 				break;
 			case RELOAD:

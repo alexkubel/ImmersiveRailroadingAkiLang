@@ -44,7 +44,7 @@ public class ExpireableMap<K,V> {
 				// clear unused
                 Set<K> ks = new HashSet<>(map.keySet());
 				for (K dk : ks) {
-					if (dk != key && mapUsage.get(dk) + lifeSpan < timeS()) {
+					if (!dk.equals(key) && mapUsage.get(dk) + lifeSpan < timeS()) {
 						removal.accept(dk, map.get(dk));
 						map.remove(dk);
 						mapUsage.remove(dk);

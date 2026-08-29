@@ -1,9 +1,9 @@
 name: Immersive Railroading Build Pipeline
 
-on: 
+on:
   push:
     branches:
-      - 'master'
+      - 'master' 
 
 jobs:
   build:

@@ -89,6 +89,30 @@ public class VecUtil {
 	public static Vec3d between(Vec3d front, Vec3d rear) {
 		return new Vec3d((front.x + rear.x) / 2, (front.y + rear.y) / 2, (front.z + rear.z) / 2);
 	}
+	
+	@Deprecated
+	//TODO REMOVE
+    public static double dotProduct(Vec3d a, Vec3d b) {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
+
+	public static double getByAxis(Vec3d vec, Axis axis) {
+		switch (axis) {
+			case X: return vec.x;
+			case Y: return vec.y;
+			case Z: return vec.z;
+			default: throw new IllegalArgumentException("Invalid axis, did you provide a null?");
+		}
+	}
+	
+	@Deprecated
+	//TODO REMOVE
+    public static Vec3d crossProduct(Vec3d a, Vec3d b) {
+        double cx = a.y * b.z - a.z * b.y;
+        double cy = a.z * b.x - a.x * b.z;
+        double cz = a.x * b.y - a.y * b.x;
+        return new Vec3d(cx, cy, cz);
+    }
 	public static float delta(float yaw1, float yaw2) {
 		float diff = Math.abs(yaw1 - yaw2) % 360;
 		return diff > 180 ? 360 - diff : diff;
