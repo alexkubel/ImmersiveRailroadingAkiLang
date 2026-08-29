@@ -75,13 +75,39 @@ public class RailSettings {
                     parallelGap);
  }
 
-//    public RailSettings(Gauge gauge, String track, TrackItems type, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo,
-//        TrackDirection direction, ItemStack railBed, ItemStack railBedFill, int railBedFillWidth,  boolean isPreview, boolean isGradeCrossing, 
-//        int count, int spacing, int parallelCount, float parallelGap) {
-//        this(gauge, track, type, length, degrees, curvosity, smoothing, nearPointData, farPointData,rollAndOffsetInfo,pickRollAndOffsetInfo, 
-//            direction, railBed, railBedFill, railBedFillWidth, isPreview, isGradeCrossing, 
-//            count, spacing, parallelCount, parallelGap);
-//    }
+    public RailSettings(Gauge gauge, String track, TrackItems type, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo,
+        TrackDirection direction, ItemStack railBed, ItemStack railBedFill, int railBedFillWidth, ItemStack embankment, int embankmentOffset, int embankmentHeight, float embankmentGradient, boolean cuttingEnabled, int cuttingOffset, int cuttingHeight, float cuttingGradient,
+        boolean isPreview, boolean isGradeCrossing, 
+        int count, int spacing, int parallelCount, float parallelGap) {
+        this(gauge, 
+            track, 
+            type, 
+            length, 
+            degrees, curvosity, 
+            smoothing, 
+            nearPointData, 
+            farPointData,
+            rollAndOffsetInfo,
+            pickRollAndOffsetInfo, 
+            direction, railBed, 
+            railBedFill, 
+            railBedFillWidth, 
+            embankment, 
+            embankmentOffset, 
+            embankmentHeight, 
+            embankmentGradient, 
+            cuttingEnabled, 
+            cuttingOffset, 
+            cuttingHeight, 
+            cuttingGradient, 
+            isPreview, 
+            isGradeCrossing, 
+            count, 
+            spacing, 
+            parallelCount, 
+            parallelGap
+        );
+    }
 
     public RailSettings(
             Gauge gauge,

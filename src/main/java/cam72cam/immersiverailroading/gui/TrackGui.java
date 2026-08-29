@@ -776,6 +776,24 @@ public class TrackGui implements IScreen {
 		boolean embankmentPage = bottomPage == 1;
 		boolean cuttingPage = bottomPage == 2;
 
+		switch (bottomPage) {
+			case 0:
+				trackPage = true;
+				embankmentPage = false;
+				cuttingPage = false;
+				break;
+			case 1:
+				embankmentPage = true;
+				trackPage = false;
+				cuttingPage = false;
+				break;
+			case 2:
+				cuttingPage = true;
+				embankmentPage = false;
+				trackPage = false;
+				break;
+		}
+
 		bottomPageButton.setText(GuiText.SELECTOR_PAGE.toString(bottomPage + 1, BOTTOM_PAGE_COUNT));
 
 		trackButton.setVisible(trackPage);
