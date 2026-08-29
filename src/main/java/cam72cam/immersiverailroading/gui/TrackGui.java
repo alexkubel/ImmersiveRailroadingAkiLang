@@ -420,7 +420,7 @@ public class TrackGui implements IScreen {
 		int bottomY = ytop;
 		int pageButtonY = bottomY + height * 6;
 
-		bottomPageButton = new Button(screen, bottomX, pageButtonY, width, height, "") {
+		bottomPageButton = new Button(screen, bottomX+width, pageButtonY, width, height, "") {
 			@Override
 			public void onClick(Player.Hand hand) {
 				bottomPage = (bottomPage + BOTTOM_PAGE_COUNT + (hand == Player.Hand.PRIMARY ? 1 : -1)) % BOTTOM_PAGE_COUNT;
@@ -502,7 +502,7 @@ public class TrackGui implements IScreen {
 			}
 		};
 		int yEmbankment = bottomY;
-		embankmentButton = new Button(screen, 125+bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
+		embankmentButton = new Button(screen, width+bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				showSelector(embankmentSelector);
@@ -510,7 +510,7 @@ public class TrackGui implements IScreen {
 		};
 		yEmbankment += height;
 
-		embankmentOffsetSlider = new Slider(screen, 125+bottomX, yEmbankment, "", 0, 10, settings.embankmentOffset, false) {
+		embankmentOffsetSlider = new Slider(screen, width+25+bottomX, yEmbankment, "", 0, 10, settings.embankmentOffset, false) {
 			@Override
 			public void onSlider() {
 				settings.embankmentOffset = this.getValueInt();
@@ -520,7 +520,7 @@ public class TrackGui implements IScreen {
 		embankmentOffsetSlider.onSlider();
 		yEmbankment += height;
 
-		embankmentHeightSlider = new Slider(screen, 125+bottomX, yEmbankment, "", 1, 40, settings.embankmentHeight, false) {
+		embankmentHeightSlider = new Slider(screen, width+25+bottomX, yEmbankment, "", 1, 40, settings.embankmentHeight, false) {
 			@Override
 			public void onSlider() {
 				settings.embankmentHeight = this.getValueInt();
@@ -530,7 +530,7 @@ public class TrackGui implements IScreen {
 		embankmentHeightSlider.onSlider();
 		yEmbankment += height;
 
-		embankmentGradientSlider = new Slider(screen, 125+bottomX, yEmbankment, "", 1, 100, settings.embankmentGradient * 10, false) {
+		embankmentGradientSlider = new Slider(screen, width+25+bottomX, yEmbankment, "", 1, 100, settings.embankmentGradient * 10, false) {
 			@Override
 			public void onSlider() {
 				settings.embankmentGradient = this.getValueInt() / 10f;
@@ -541,7 +541,7 @@ public class TrackGui implements IScreen {
 		yEmbankment += height;
 
 		int yCutting = bottomY;
-		cuttingCB = new CheckBox(screen, bottomX+202, yCutting+2, GuiText.SELECTOR_CUTTING.toString(), settings.cuttingEnabled) {
+		cuttingCB = new CheckBox(screen, bottomX+2+(width*2), yCutting+2, GuiText.SELECTOR_CUTTING.toString(), settings.cuttingEnabled) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				settings.cuttingEnabled = cuttingCB.isChecked();
@@ -550,7 +550,7 @@ public class TrackGui implements IScreen {
 		};
 		yCutting += height;
 
-		cuttingOffsetSlider = new Slider(screen, 225+bottomX, yCutting, "", 0, 10, settings.cuttingOffset, false) {
+		cuttingOffsetSlider = new Slider(screen, (width*2)+25+bottomX, yCutting, "", 0, 10, settings.cuttingOffset, false) {
 			@Override
 			public void onSlider() {
 				settings.cuttingOffset = this.getValueInt();
@@ -560,7 +560,7 @@ public class TrackGui implements IScreen {
 		cuttingOffsetSlider.onSlider();
 		yCutting += height;
 
-		cuttingHeightSlider = new Slider(screen, 225+bottomX, yCutting, "", 1, 40, settings.cuttingHeight, false) {
+		cuttingHeightSlider = new Slider(screen, (width*2)+25+bottomX, yCutting, "", 1, 40, settings.cuttingHeight, false) {
 			@Override
 			public void onSlider() {
 				settings.cuttingHeight = this.getValueInt();
@@ -570,7 +570,7 @@ public class TrackGui implements IScreen {
 		cuttingHeightSlider.onSlider();
 		yCutting += height;
 
-		cuttingGradientSlider = new Slider(screen, 225+bottomX, yCutting, "", 1, 100, settings.cuttingGradient * 10, false) {
+		cuttingGradientSlider = new Slider(screen, (width*2)+25+bottomX, yCutting, "", 1, 100, settings.cuttingGradient * 10, false) {
 			@Override
 			public void onSlider() {
 				settings.cuttingGradient = this.getValueInt() / 10f;
@@ -580,7 +580,7 @@ public class TrackGui implements IScreen {
 		cuttingGradientSlider.onSlider();
 		yCutting += height;
 
-		bedFillWidthSlider = new Slider(screen, 225+bottomX, ytop, "", 0, 10, settings.railBedFillWidth, false) {
+		bedFillWidthSlider = new Slider(screen, (width*2)+25+bottomX, ytop, "", 0, 10, settings.railBedFillWidth, false) {
 			@Override
 			public void onSlider() {
 				settings.railBedFillWidth = this.getValueInt();
@@ -601,7 +601,7 @@ public class TrackGui implements IScreen {
 			}
 		};
 		yEmbankment = bottomY;
-		embankmentButton = new Button(screen, 100+bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
+		embankmentButton = new Button(screen, width+25+bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				showSelector(embankmentSelector);
@@ -609,7 +609,7 @@ public class TrackGui implements IScreen {
 		};
 		yEmbankment += height;
 
-		embankmentOffsetSlider = new Slider(screen, 125+bottomX, yEmbankment, "", 0, 10, settings.embankmentOffset, false) {
+		embankmentOffsetSlider = new Slider(screen, width+25+bottomX, yEmbankment, "", 0, 10, settings.embankmentOffset, false) {
 			@Override
 			public void onSlider() {
 				settings.embankmentOffset = this.getValueInt();
@@ -619,7 +619,7 @@ public class TrackGui implements IScreen {
 		embankmentOffsetSlider.onSlider();
 		yEmbankment += height;
 
-		embankmentHeightSlider = new Slider(screen, 125+bottomX, yEmbankment, "", 1, 40, settings.embankmentHeight, false) {
+		embankmentHeightSlider = new Slider(screen, width+25+bottomX, yEmbankment, "", 1, 40, settings.embankmentHeight, false) {
 			@Override
 			public void onSlider() {
 				settings.embankmentHeight = this.getValueInt();
@@ -629,7 +629,7 @@ public class TrackGui implements IScreen {
 		embankmentHeightSlider.onSlider();
 		yEmbankment += height;
 
-		embankmentGradientSlider = new Slider(screen, 125+bottomX, yEmbankment, "", 1, 100, settings.embankmentGradient * 10, false) {
+		embankmentGradientSlider = new Slider(screen, width+25+bottomX, yEmbankment, "", 1, 100, settings.embankmentGradient * 10, false) {
 			@Override
 			public void onSlider() {
 				settings.embankmentGradient = this.getValueInt() / 10f;
@@ -640,7 +640,7 @@ public class TrackGui implements IScreen {
 		yEmbankment += height;
 
 		yCutting = bottomY;
-		cuttingCB = new CheckBox(screen, bottomX+202, yCutting+2, GuiText.SELECTOR_CUTTING.toString(), settings.cuttingEnabled) {
+		cuttingCB = new CheckBox(screen, bottomX+(width*2)+2, yCutting+2, GuiText.SELECTOR_CUTTING.toString(), settings.cuttingEnabled) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				settings.cuttingEnabled = cuttingCB.isChecked();
@@ -649,7 +649,7 @@ public class TrackGui implements IScreen {
 		};
 		yCutting += height;
 
-		cuttingOffsetSlider = new Slider(screen, 225+bottomX, yCutting, "", 0, 10, settings.cuttingOffset, false) {
+		cuttingOffsetSlider = new Slider(screen, (width*2)+25+bottomX, yCutting, "", 0, 10, settings.cuttingOffset, false) {
 			@Override
 			public void onSlider() {
 				settings.cuttingOffset = this.getValueInt();
@@ -659,7 +659,7 @@ public class TrackGui implements IScreen {
 		cuttingOffsetSlider.onSlider();
 		yCutting += height;
 
-		cuttingHeightSlider = new Slider(screen, 225+bottomX, yCutting, "", 1, 40, settings.cuttingHeight, false) {
+		cuttingHeightSlider = new Slider(screen, (width*2)+25+bottomX, yCutting, "", 1, 40, settings.cuttingHeight, false) {
 			@Override
 			public void onSlider() {
 				settings.cuttingHeight = this.getValueInt();
@@ -669,7 +669,7 @@ public class TrackGui implements IScreen {
 		cuttingHeightSlider.onSlider();
 		yCutting += height;
 
-		cuttingGradientSlider = new Slider(screen, 225+bottomX, yCutting, "", 1, 100, settings.cuttingGradient * 10, false) {
+		cuttingGradientSlider = new Slider(screen, (width*2)+25+bottomX, yCutting, "", 1, 100, settings.cuttingGradient * 10, false) {
 			@Override
 			public void onSlider() {
 				settings.cuttingGradient = this.getValueInt() / 10f;
@@ -703,7 +703,7 @@ public class TrackGui implements IScreen {
 		};
 //		ytop += height;
 
-		isGradeCrossingCB = new CheckBox(screen, bottomX+102, ytop+2, GuiText.SELECTOR_GRADE_CROSSING.toString(), settings.isGradeCrossing) {
+		isGradeCrossingCB = new CheckBox(screen, bottomX+(width/2)+2, ytop+2, GuiText.SELECTOR_GRADE_CROSSING.toString(), settings.isGradeCrossing) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				settings.isGradeCrossing = isGradeCrossingCB.isChecked();

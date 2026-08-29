@@ -138,6 +138,16 @@ public abstract class EntityRidableRollingStock extends EntityBuildableRollingSt
 				.isPresent();
 	}
 
+	private boolean isNearestConnectingDoorOpen(Player source) {
+		// Find any doors that are close enough that are closed (and then negate)
+		return !this.getDefinition().getModel().getDoors().stream()
+				.filter(d -> d.type == Door.Types.CONNECTING)
+				.filter(d -> d.center(this).distanceTo(source.getPosition()) < getDefinition().getLength(this.gauge)/3)
+				.min(Comparator.comparingDouble(d -> d.center(this).distanceTo(source.getPosition())))
+				.filter(x -> !x.isOpen(this))
+				.isPresent();
+	}
+
 	protected Vec3d playerMovement(Player source, Vec3d offset) {
 		Vec3d movement = source.getMovementInput();
         /*
