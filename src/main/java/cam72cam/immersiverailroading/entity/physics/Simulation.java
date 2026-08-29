@@ -2,7 +2,9 @@ package cam72cam.immersiverailroading.entity.physics;
 
 import cam72cam.immersiverailroading.Config;
 import cam72cam.immersiverailroading.ImmersiveRailroading;
+import cam72cam.immersiverailroading.Config.ConfigDebug;
 import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock;
+import cam72cam.immersiverailroading.entity.Locomotive;
 import cam72cam.immersiverailroading.entity.physics.chrono.ChronoState;
 import cam72cam.immersiverailroading.entity.physics.chrono.ServerChronoState;
 import cam72cam.immersiverailroading.net.MRSSyncPacket;
@@ -27,7 +29,7 @@ public class Simulation {
     private final World world;
     private final int startTickID;
     List<Map<UUID, SimulationState>> stateMaps;
-    private final List<Vec3i> blocksAlreadyBroken;
+    private final Set<Vec3i> blocksAlreadyBroken;
     List<EntityCoupleableRollingStock> loaded;
 
 
@@ -38,7 +40,7 @@ public class Simulation {
         this.startTickID = ((ServerChronoState)ChronoState.getState(world)).getServerTickID();
 
         stateMaps = new ArrayList<>();
-        blocksAlreadyBroken = new ArrayList<>();
+        blocksAlreadyBroken = new HashSet<>();
 
         for (int i = 0; i < Config.ConfigDebug.physicsFutureTicks; i++) {
             stateMaps.add(new HashMap<>());
@@ -102,11 +104,14 @@ public class Simulation {
                         SimulationState state = new SimulationState(stock);
                         state.tickID = tickID;
                         stateMap.put(stock.getUUID(), state);
+                        
                     }
                 }
 
                 SimulationState state = stateMap.get(stock.getUUID());
-
+                if (stock instanceof Locomotive && state.config.delta != 0) {
+                    ((Locomotive) stock).mainAirReservoir(state.config.delta);
+                }
 
                 // Don't need to load
                 if (state.atRest && !state.dirty) {
@@ -115,6 +120,9 @@ public class Simulation {
 
                 // Keep it loaded
                 world.keepLoaded(new Vec3i(state.position));
+                // TODO Debugging
+                if (ConfigDebug.debugLog && tickID % 76 == 0)
+                    System.out.println("Loaded Chunk at: " + state.position.x + ", " + state.position.y + ", " + state.position.z);
 
                 if (state.consist.positions == null) {
                     continue;
@@ -127,6 +135,17 @@ public class Simulation {
                         ImmersiveRailroading.debug("Loading chunk at position %s", pos);
                         // Load the chunk, entities should be directly injected into the world
                         world.getBlock(pos);
+                        newChunksLoaded = true;
+                    }
+                    
+                    if (stock.lastKnownFront != null && !world.isBlockLoaded(stock.lastKnownFront)) {
+                        ImmersiveRailroading.debug("Loading coupled front neighbor at %s", stock.lastKnownFront);
+                        world.getBlock(stock.lastKnownFront);
+                        newChunksLoaded = true;
+                    }
+                    if (stock.lastKnownRear != null && !world.isBlockLoaded(stock.lastKnownRear)) {
+                        ImmersiveRailroading.debug("Loading coupled rear neighbor at %s", stock.lastKnownRear);
+                        world.getBlock(stock.lastKnownRear);
                         newChunksLoaded = true;
                     }
                 }

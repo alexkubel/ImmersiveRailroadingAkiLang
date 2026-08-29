@@ -136,7 +136,8 @@ public class TrackGui implements IScreen {
 		return stack.getDisplayName();
 	}
 
-	public void init(IScreenBuilder screen) {
+	@SuppressWarnings("deprecation")
+    public void init(IScreenBuilder screen) {
 
 		// Left pane
 		int width = 200;
@@ -738,7 +739,7 @@ public class TrackGui implements IScreen {
 		};
 		trackExtraGuiButton.setVisible(settings.type.canRoll());
 
-		Slider zoom_slider = new Slider(screen, GUIHelpers.getScreenWidth() / 2 - 150, (int) (GUIHelpers.getScreenHeight()*0.75 - height),
+		new Slider(screen, GUIHelpers.getScreenWidth() / 2 - 150, (int) (GUIHelpers.getScreenHeight()*0.75 - height),
 										GuiText.SLIDER_ZOOM.toString(), 0.1, 2, 1, true) {
 			@Override
 			public void onSlider() {

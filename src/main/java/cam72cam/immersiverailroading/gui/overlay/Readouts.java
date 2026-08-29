@@ -2,12 +2,14 @@ package cam72cam.immersiverailroading.gui.overlay;
 
 import cam72cam.immersiverailroading.entity.*;
 import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock.CouplerType;
+import cam72cam.immersiverailroading.library.unit.PressureDisplayType;
 import cam72cam.immersiverailroading.model.LocomotiveModel;
 import cam72cam.immersiverailroading.model.StockModel;
 
 public enum Readouts {
     LIQUID,
     SPEED,
+    REAL_SPEED,
     TEMPERATURE,
     BOILER_PRESSURE,
     THROTTLE,
@@ -33,7 +35,18 @@ public enum Readouts {
     CYLINDER_DRAIN,
     CARGO_FILL,
     ENGINE_RPM,
+    CHEST_PRESSURE,
+    HAND_BRAKE,
+    BRAKE_CYLINDER_PRESSURE,
+    DYNAMIC_BRAKE,
+    ROLLING_STOCK_PITCH,
+    TRACTIVE_EFFORT,
+    MAIN_AIR_RESERVOIR,
+    MAGNETIC_BRAKE,
+    SANDING,
+    SLIPPING,
     TENDER_FEED,
+    EMERGENCY,
     ;
 
     public float getValue(EntityRollingStock stock) {
@@ -45,11 +58,18 @@ public enum Readouts {
             case LIQUID ->
                 stock instanceof FreightTank tank ? tank.getPercentLiquidFull() / 100f : 0;
             case SPEED -> {
-                double maxSpeed = (stock instanceof Locomotive loco ? loco.getDefinition().getMaxSpeed(stock.gauge).metric() : 0);
+                double maxSpeed = (stock instanceof Locomotive loco ? loco.getDefinition().getScriptedMaxSpeed(stock.gauge, loco).metric() : 0);
                 if (maxSpeed == 0) {
                     maxSpeed = 200;
                 }
                 yield stock instanceof EntityMoveableRollingStock moveable ? (float) Math.abs(moveable.getCurrentSpeed().metric() / maxSpeed) : 0;
+            }
+            case REAL_SPEED -> {
+                double maxRealSpeed = (stock instanceof Locomotive loco ? loco.getDefinition().getScriptedMaxSpeed(stock.gauge, loco).metric() : 0);
+                if (maxRealSpeed == 0) {
+                    maxRealSpeed = 200;
+                }
+                yield stock instanceof EntityMoveableRollingStock moveable ? (float) Math.abs(moveable.getRealSpeed().metric() / maxRealSpeed) : 0;
             }
             case TEMPERATURE -> {
                 if (stock instanceof LocomotiveSteam steam) {
@@ -61,19 +81,20 @@ public enum Readouts {
                 yield 0;
             }
             case BOILER_PRESSURE ->
-                stock instanceof LocomotiveSteam steam ? steam.getBoilerPressure() / steam.getDefinition().getMaxPSI(stock.gauge) : 0;
+                stock instanceof LocomotiveSteam steam ? steam.getBoilerPressureBar() / (steam.getDefinition().getMaxPSI(stock.gauge) * PressureDisplayType.psiToBar) : 0;
             case THROTTLE ->
                 stock instanceof Locomotive loco ? loco.getThrottle() : 0;
             case REVERSER ->
                 stock instanceof Locomotive loco ? (loco.getReverser() + 1) / 2 : 0;
             case TRAIN_BRAKE ->
-                stock instanceof Locomotive loco ? loco.getTrainBrake() : 0;
+                stock instanceof Locomotive loco ? loco.getTrainBrakePos() : 0;
             case TRAIN_BRAKE_LEVER ->
                 stock.getDefinition().isLinearBrakeControl() ? TRAIN_BRAKE.getValue(stock) : lever;
             case INDEPENDENT_BRAKE ->
                 stock instanceof EntityMoveableRollingStock moveable ? moveable.getIndependentBrake() : 0;
             case BRAKE_PRESSURE ->
                 stock instanceof EntityMoveableRollingStock moveable ? moveable.getBrakePressure() : 0;
+            case BRAKE_CYLINDER_PRESSURE -> stock instanceof EntityMoveableRollingStock moveable ? moveable.getBrakeCylinderPressure() : 0;
             case COUPLER_FRONT ->
                 stock instanceof EntityCoupleableRollingStock coupleable && coupleable.isCouplerEngaged(CouplerType.FRONT) ? 1 : 0;
             case COUPLER_REAR ->
@@ -114,8 +135,19 @@ public enum Readouts {
                 stock instanceof Freight freight ? freight.getPercentCargoFull() / 100f : 0;
             case ENGINE_RPM ->
                 stock instanceof LocomotiveDiesel diesel ? diesel.getRelativeRPM() : 0;
+            case CHEST_PRESSURE -> stock instanceof LocomotiveSteam steam ? steam.getChestPressurePercent() : 0;
+            case HAND_BRAKE -> stock instanceof EntityMoveableRollingStock moveable ? moveable.getHandBrake() : 0;
+            case DYNAMIC_BRAKE -> stock instanceof LocomotiveDiesel diesel ? (float) diesel.getDynamicBrakeMultiplier() : 0;
+            case ROLLING_STOCK_PITCH -> stock.getRotationPitch();
+            case TRACTIVE_EFFORT -> stock instanceof Locomotive loco ? loco.getCurrentTractiveEffort() : 0;
+            case MAIN_AIR_RESERVOIR -> stock instanceof Locomotive loco ? loco.getMainAirReservoir() : 0;
+            case MAGNETIC_BRAKE -> stock instanceof EntityMoveableRollingStock moveable && moveable.getMagnetBrakeNewton() > 0 ? 1 : 0;
+            case SANDING -> stock instanceof Locomotive loco && loco.isSanding ? 1 : 0;
+            case SLIPPING -> stock instanceof Locomotive loco && loco.slipping ? 1 : 0;
             case TENDER_FEED ->
                     stock instanceof LocomotiveSteam steam && steam.isAutoFeedEnabled() ? 1 : 0;
+            case EMERGENCY -> stock instanceof Locomotive loco && loco.getEmergency() ? 1 : 0;
+            default -> 0;
         };
     }
 
@@ -131,6 +163,7 @@ public enum Readouts {
         return 0.5f + yaw / deltaYaw;
     }
 
+    @SuppressWarnings("incomplete-switch")
     public void setValue(EntityRollingStock stock, float value) {
         switch (this) {
             case THROTTLE -> {
@@ -153,7 +186,7 @@ public enum Readouts {
                     TRAIN_BRAKE.setValue(stock, value);
                 } else if (stock instanceof Locomotive loco) {
                     // Logic duplicated in Locomotive#onTick
-                    loco.setTrainBrake(Math.clamp(loco.getTrainBrake() + (value - 0.5f) / 80, 0, 1));
+                    loco.setTrainBrake(Math.clamp(loco.getTrainBrakePos() + (value - 0.5f) / 80, 0, 1));
                 }
             }
             case INDEPENDENT_BRAKE -> {
@@ -199,6 +232,16 @@ public enum Readouts {
                 if (stock instanceof LocomotiveSteam steam) {
                     steam.setAutoFeed(value > 0.9);
                 }
+            }
+            case SANDING -> {
+            	if (stock instanceof Locomotive loco) {
+            		loco.sandingKey = (value >= 0.5);
+            	}
+            }
+            case EMERGENCY -> {
+            	if (stock instanceof Locomotive loco) {
+            		loco.setEmergency(value >= 0.5);
+            	}
             }
         }
     }

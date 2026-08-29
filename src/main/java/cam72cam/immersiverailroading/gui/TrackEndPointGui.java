@@ -59,18 +59,12 @@ public class TrackEndPointGui implements IScreen {
     private TextField farPitchInput;
     private Button farPitchSettingButton;
 
-    // PosType
-    private Button nearPosTypeButton;
     private TextField nearYawInput;
     private Button nearPosYawAlignSelector;
 
-    private Button farPosTypeButton;
     private TextField farYawInput;
     private Button farPosYawTypeSelector;
 
-    // Track Snapping
-    private CheckBox nearPosSnapCB;
-    private CheckBox farPosSnapCB;
     private CheckBox nearHeightSnapCB;
     private CheckBox farHeightSnapCB;
     private CheckBox nearYawSnapCB;
@@ -79,8 +73,6 @@ public class TrackEndPointGui implements IScreen {
     private CheckBox farPitchSnapCB;
     private CheckBox nearRollSnapCB;
     private CheckBox farRollSnapCB;
-
-    private Button trackGuiButton;
 
     public TrackEndPointGui() {
         this(MinecraftClient.getPlayer().getHeldItem(Player.Hand.PRIMARY));
@@ -321,7 +313,7 @@ public class TrackEndPointGui implements IScreen {
 
         // TrackGui
 
-        trackGuiButton = new Button(screen, right_xStart + width / 2 - 30, ytop, width / 2, height,
+        new Button(screen, right_xStart + width / 2 - 30, ytop, width / 2, height,
                 GuiText.TRACK_EXTRA_TO_MAIN.toString(), (_, _) -> {
             targetGuiOpenType = 0;
             onClose();
@@ -336,11 +328,11 @@ public class TrackEndPointGui implements IScreen {
 
         // Pos Type
 
-        nearPosTypeButton = new Button(screen, left_xStart, ytop, width - 30, height, GuiText.SELECTOR_POSITION.toString(settings.nearPointData.posType()), (hand, button) -> {
+        new Button(screen, left_xStart, ytop, width - 30, height, GuiText.SELECTOR_POSITION.toString(settings.nearPointData.posType()), (hand, button) -> {
             settings.nearPointData = settings.nearPointData.with(mutable -> mutable.posType = next(settings.nearPointData.posType(), hand));
             button.setText(GuiText.SELECTOR_POSITION.toString(settings.nearPointData.posType()));
         });
-        farPosTypeButton = new Button(screen, right_xStart, ytop, width - 30, height, GuiText.SELECTOR_POSITION.toString(settings.farPointData.posType()), (hand, button) -> {
+        new Button(screen, right_xStart, ytop, width - 30, height, GuiText.SELECTOR_POSITION.toString(settings.farPointData.posType()), (hand, button) -> {
             settings.farPointData = settings.farPointData.with(mutable -> mutable.posType = next(settings.farPointData.posType(), hand));
             button.setText(GuiText.SELECTOR_POSITION.toString(settings.farPointData.posType()));
         });
@@ -411,13 +403,13 @@ public class TrackEndPointGui implements IScreen {
 
         // Track Snap
 
-        nearPosSnapCB = new CheckBox(screen, left_xStart, ytop, GuiText.LABEL_SNAP_POS.toString(), settings.nearPointData.trackSnapSettings().snapPos(), (hand, self) -> {
+        new CheckBox(screen, left_xStart, ytop, GuiText.LABEL_SNAP_POS.toString(), settings.nearPointData.trackSnapSettings().snapPos(), (hand, self) -> {
             TrackSnapSettings trackSnapSettings = settings.nearPointData.trackSnapSettings().with(mutable -> mutable.snapPos = self.isChecked());
             settings.nearPointData = settings.nearPointData.with(mutable -> mutable.trackSnapSettings = trackSnapSettings);
             setNearSnapComponentsVisibility();
         });
 
-        farPosSnapCB = new CheckBox(screen, right_xStart, ytop, GuiText.LABEL_SNAP_POS.toString(), settings.farPointData.trackSnapSettings().snapPos(), (hand, self) -> {
+        new CheckBox(screen, right_xStart, ytop, GuiText.LABEL_SNAP_POS.toString(), settings.farPointData.trackSnapSettings().snapPos(), (hand, self) -> {
             TrackSnapSettings trackSnapSettings = settings.farPointData.trackSnapSettings().with(mutable -> mutable.snapPos = self.isChecked());
             settings.farPointData = settings.farPointData.with(mutable -> mutable.trackSnapSettings = trackSnapSettings);
             setFarSnapComponentsVisibility();

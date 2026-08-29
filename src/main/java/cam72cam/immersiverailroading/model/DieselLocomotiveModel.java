@@ -36,6 +36,11 @@ public class DieselLocomotiveModel extends LocomotiveModel<LocomotiveDiesel, Loc
         addGauge(provider, ModelComponentType.GAUGE_TEMPERATURE_X, Readouts.TEMPERATURE);
         addControl(provider, ModelComponentType.ENGINE_START_X);
         addControl(provider, ModelComponentType.HORN_CONTROL_X);
+        
+        if (def.getDynamicBrakeNewton() != 0) {
+            addControl(provider, ModelComponentType.DYNAMIC_BRAKE_X);
+            addGauge(provider, ModelComponentType.GAUGE_DYNAMIC_BRAKE_X, Readouts.DYNAMIC_BRAKE);
+        }
     }
 
     @Override
@@ -68,8 +73,8 @@ public class DieselLocomotiveModel extends LocomotiveModel<LocomotiveDiesel, Loc
     }
 
     @Override
-    protected void effects(LocomotiveDiesel stock) {
-        super.effects(stock);
+    protected void tick(LocomotiveDiesel stock) {
+        super.tick(stock);
         exhaust.effects(stock);
         horn.effects(stock,
                 stock.getHornTime() > 0 && (stock.isRunning() || stock.getDefinition().isCabCar())
