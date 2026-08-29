@@ -417,9 +417,9 @@ public class TrackGui implements IScreen {
 		ytop = (int) (GUIHelpers.getScreenHeight() * 0.75 - height * 7);
 		int bottomX = xtop;
 		int bottomY = ytop;
-		int pageButtonY = bottomY + height * 6;
+		int pageButtonY = bottomY + (height * 4);
 
-		bottomPageButton = new Button(screen, bottomX+width, pageButtonY, width, height, "") {
+		bottomPageButton = new Button(screen, bottomX, pageButtonY, width, height, "") {
 			@Override
 			public void onClick(Player.Hand hand) {
 				bottomPage = (bottomPage + BOTTOM_PAGE_COUNT + (hand == Player.Hand.PRIMARY ? 1 : -1)) % BOTTOM_PAGE_COUNT;
