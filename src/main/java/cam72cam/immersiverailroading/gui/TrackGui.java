@@ -579,16 +579,6 @@ public class TrackGui implements IScreen {
 		cuttingGradientSlider.onSlider();
 		yCutting += height;
 
-		bedFillWidthSlider = new Slider(screen, (width*2)+25+bottomX, ytop, "", 0, 10, settings.railBedFillWidth, false) {
-			@Override
-			public void onSlider() {
-				settings.railBedFillWidth = this.getValueInt();
-				bedFillWidthSlider.setText(GuiText.SELECTOR_RAIL_BED_FILL_WIDTH.toString(settings.railBedFillWidth));
-			}
-		};
-		bedFillWidthSlider.onSlider();
-		ytop += height;
-
 		embankmentSelector = new ListSelector<ItemStack>(screen, width, 250, height, settings.embankment,
 				oreDict.stream().collect(Collectors.toMap(TrackGui::getStackName, g -> g, (u, v) -> u, LinkedHashMap::new))
 		) {
@@ -600,7 +590,7 @@ public class TrackGui implements IScreen {
 			}
 		};
 		yEmbankment = bottomY;
-		embankmentButton = new Button(screen, width+25+bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
+		embankmentButton = new Button(screen, width+bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				showSelector(embankmentSelector);
