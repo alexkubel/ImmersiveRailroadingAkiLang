@@ -501,7 +501,7 @@ public class TrackGui implements IScreen {
 			}
 		};
 		int yEmbankment = bottomY;
-		embankmentButton = new Button(screen, width+25+bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
+		embankmentButton = new Button(screen, width+bottomX, yEmbankment, width, height, GuiText.SELECTOR_EMBANKMENT.toString(getStackName(settings.embankment))) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				showSelector(embankmentSelector);
@@ -702,7 +702,7 @@ public class TrackGui implements IScreen {
 		};
 //		ytop += height;
 
-		isGradeCrossingCB = new CheckBox(screen, bottomX+width+2, ytop+2, GuiText.SELECTOR_GRADE_CROSSING.toString(), settings.isGradeCrossing) {
+		isGradeCrossingCB = new CheckBox(screen, bottomX+(width/2)+2, ytop+2, GuiText.SELECTOR_GRADE_CROSSING.toString(), settings.isGradeCrossing) {
 			@Override
 			public void onClick(Player.Hand hand) {
 				settings.isGradeCrossing = isGradeCrossingCB.isChecked();
