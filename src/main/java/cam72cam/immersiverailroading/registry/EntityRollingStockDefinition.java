@@ -9,6 +9,7 @@ import cam72cam.immersiverailroading.font.FontLoader;
 import cam72cam.immersiverailroading.textfield.TextFieldConfig;
 import cam72cam.immersiverailroading.textfield.library.RGBA;
 import cam72cam.immersiverailroading.util.*;
+import cam72cam.immersiverailroading.util.floor.NavMesh;
 import cam72cam.immersiverailroading.gui.overlay.GuiBuilder;
 import cam72cam.immersiverailroading.gui.overlay.Readouts;
 import cam72cam.immersiverailroading.library.*;
