@@ -22,7 +22,7 @@ jobs:
       run: mkdir -p ~/.ssh/ && ssh-keyscan -t rsa teamopenindustry.cc >> ~/.ssh/known_hosts
     - name: Install deps
       run: sudo apt install -y pngquant findutils xvfb
-          - name: Download LuaJ 3.0.2 JAR
+    - name: Download LuaJ 3.0.2 JAR
       run: |
         mkdir -p libs
         curl -L -o libs/luaj-jse-3.0.2.jar https://github.com/luaj/luaj/releases/download/v3.0.2/luaj-jse-3.0.2.jar
