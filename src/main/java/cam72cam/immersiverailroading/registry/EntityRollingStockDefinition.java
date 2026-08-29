@@ -5,7 +5,6 @@ import cam72cam.immersiverailroading.ConfigSound;
 import cam72cam.immersiverailroading.ImmersiveRailroading;
 import cam72cam.immersiverailroading.entity.*;
 import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock.CouplerType;
-import cam72cam.immersiverailroading.floor.NavMesh;
 import cam72cam.immersiverailroading.font.FontLoader;
 import cam72cam.immersiverailroading.textfield.TextFieldConfig;
 import cam72cam.immersiverailroading.textfield.library.RGBA;
