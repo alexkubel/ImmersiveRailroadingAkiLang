@@ -3,7 +3,8 @@ name: Immersive Railroading Build Pipeline
 on:
   push:
     branches:
-      - 'testbuild' 
+      - 'master' 
+      - 'testbuild'
       - 'main'
 
 jobs:
@@ -69,6 +70,6 @@ jobs:
         name: Testbuild v${{ github.run_number }}
         draft: false
         prerelease: true
-        files: build/libs/ImmersiveRailroading-${{ matrix.branch }}-AkiBuild-v${{ github.run_number }}.jar
+        files: build/libs/ImmersiveRailroading-${{ matrix.branch }}-AkiSim-v${{ github.run_number }}.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
