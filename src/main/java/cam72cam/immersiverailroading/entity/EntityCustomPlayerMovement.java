@@ -1,7 +1,7 @@
 package cam72cam.immersiverailroading.entity;
 
 import cam72cam.immersiverailroading.ImmersiveRailroading;
-import cam72cam.immersiverailroading.floor.NavMesh;
+import cam72cam.immersiverailroading.util.floor.NavMesh;
 import cam72cam.immersiverailroading.model.part.Door;
 import cam72cam.mod.entity.Entity;
 import cam72cam.mod.entity.Player;
