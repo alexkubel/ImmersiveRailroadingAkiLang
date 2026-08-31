@@ -5,6 +5,7 @@ import cam72cam.immersiverailroading.ConfigSound;
 import cam72cam.immersiverailroading.ImmersiveRailroading;
 import cam72cam.immersiverailroading.entity.*;
 import cam72cam.immersiverailroading.entity.EntityCoupleableRollingStock.CouplerType;
+import cam72cam.immersiverailroading.sound.*;
 import cam72cam.immersiverailroading.font.FontLoader;
 import cam72cam.immersiverailroading.textfield.TextFieldConfig;
 import cam72cam.immersiverailroading.textfield.library.RGBA;
@@ -20,8 +21,9 @@ import cam72cam.mod.ModCore;
 import cam72cam.mod.entity.EntityRegistry;
 import cam72cam.mod.entity.boundingbox.IBoundingBox;
 import cam72cam.mod.math.Vec3d;
-import cam72cam.mod.model.obj.FaceAccessor;
-import cam72cam.mod.model.obj.OBJFace;
+import cam72cam.mod.model.common.mesh.Face;
+import cam72cam.mod.model.common.mesh.Model;
+import cam72cam.mod.model.common.util.FaceAccessor;
 import cam72cam.mod.resource.Identifier;
 import cam72cam.mod.serialization.*;
 import cam72cam.mod.serialization.ResourceCache.GenericByteBuffer;
@@ -71,7 +73,7 @@ public abstract class EntityRollingStockDefinition {
     private ValveGearConfig valveGear;
     public float darken;
     public Identifier modelLoc;
-    protected StockModel<?, ?> model;
+    protected StockModel<?, ?> stockModel;
     public Identifier script;
     public Vec3d passengerCenter;
     private float bogeyFront;
@@ -128,6 +130,8 @@ public abstract class EntityRollingStockDefinition {
     public List<AnimationDefinition> animations;
     public Map<String, Float> cgDefaults;
     public Map<String, DataBlock> widgetConfig;
+
+    public List<StockSound> customSounds;
 
     public NavMesh navMesh;
 
@@ -345,25 +349,27 @@ public abstract class EntityRollingStockDefinition {
 
         loadData(transformData(data));
 
-        this.model = createModel();
-        this.itemGroups = model.groups.keySet().stream().filter(x -> !ModelComponentType.shouldRender(x)).collect(Collectors.toList());
+        this.stockModel = createModel();
+        Model model = stockModel.model;
+        this.itemGroups = model.getGroups().keySet().stream()
+                               .filter(x -> !ModelComponentType.shouldRender(x))
+                               .collect(Collectors.toList());
 
         this.navMesh = new NavMesh(this);
 
         this.renderComponents = new EnumMap<>(ModelComponentType.class);
-        for (ModelComponent component : model.allComponents) {
-            renderComponents.computeIfAbsent(component.type, v -> new ArrayList<>())
-                    .add(0, component);
+        for (ModelComponent component : stockModel.allComponents) {
+            renderComponents.computeIfAbsent(component.type, v -> new ArrayList<>()).add(0, component);
         }
 
-        itemComponents = model.allComponents.stream()
-                .map(component -> component.type)
-                .map(ItemComponentType::from)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        itemComponents = stockModel.allComponents.stream()
+                                                 .map(component -> component.type)
+                                                 .map(ItemComponentType::from)
+                                                 .filter(Objects::nonNull)
+                                                 .collect(Collectors.toList());
 
-        frontBounds = -model.minOfGroup(model.groups()).x;
-        rearBounds = model.maxOfGroup(model.groups()).x;
+        frontBounds = -model.minOfGroups(model.groups()).x;
+        rearBounds = model.maxOfGroups(model.groups()).x;
         widthBounds = model.widthOfGroups(model.groups());
 
         // Bad hack for height bounds
@@ -573,6 +579,12 @@ public abstract class EntityRollingStockDefinition {
         snowLayers = properties.getValue("snow_layers").asInteger();
 
         DataBlock sounds = data.getBlock("sounds");
+
+        Identifier file = sounds.getValue("file").asIdentifier();
+        if (file != null) {
+            loadSounds(file);
+        }
+
         wheel_sound = sounds.getValue("wheels").asIdentifier();
         clackFront = clackRear = sounds.getValue("clack").asIdentifier();
         clackFront = sounds.getValue("clack_front").asIdentifier(clackFront);
@@ -658,6 +670,55 @@ public abstract class EntityRollingStockDefinition {
         }
     }
 
+    public void loadSounds(Identifier file) throws IOException {
+        DataBlock data = withImports(DataBlock.load(file));
+
+        Map<String, SoundFile> soundFiles = new HashMap<>();
+        data.getBlocks("sounds").forEach(s -> {
+            SoundFile soundFile = new SoundFile(s);
+            String name = s.getValue("name").asString();
+            soundFiles.put(name, soundFile);
+        });
+
+        Map<String, ResponseCurve> curves = new HashMap<>();
+        if (data.getBlocks("curve") != null) {
+            data.getBlocks("curve").forEach(c -> {
+                ResponseCurve curve = new ResponseCurve(c);
+                String name = c.getValue("name").asString();
+                curves.put(name, curve);
+            });
+        }
+
+        Map<String, ModifierChain> modifierChains = new HashMap<>();
+        if (data.getBlocks("modifier_chain") != null) {
+            data.getBlocks("modifier_chain").forEach(m -> {
+                ModifierChain modifierChain = new ModifierChain(m, curves);
+                String name = m.getValue("name").asString();
+                modifierChains.put(name, modifierChain);
+            });
+        }
+
+        customSounds = new ArrayList<>();
+        if (data.getBlocks("loop") != null) {
+            data.getBlocks("loop").forEach(l -> {
+                SoundFile soundFile = soundFiles.get(l.getValue("sound").asString());
+                ModifierChain modifierChain = modifierChains.get(l.getValue("modifier_chain").asString());
+
+                StockSound def = new LoopedSound(l, soundFile, modifierChain);
+                customSounds.add(def);
+            });
+        }
+
+        if (data.getBlocks("oneshot") != null) {
+            data.getBlocks("oneshot").forEach(o -> {
+                SoundFile soundFile = soundFiles.get(o.getValue("sound").asString());
+
+                StockSound def = new OneShotSounds(o, soundFile);
+                customSounds.add(def);
+            });
+        }
+    }
+
     public List<ModelComponent> getComponents(ModelComponentType name) {
         if (!renderComponents.containsKey(name)) {
             return null;
@@ -701,8 +762,8 @@ public abstract class EntityRollingStockDefinition {
     private Vec3d getCollidingDoorTangent(EntityRollingStock stock, Gauge gauge, Vec3d start, Vec3d end) {
         // Maybe filter by nearest door?
         List<Door<?>> doors = getModel().getDoors().stream()
-                .filter(d -> d.type == Door.Types.CONNECTING || d.type == Door.Types.INTERNAL)
-                .filter(d -> !d.isOpen(stock)).collect(Collectors.toUnmodifiableList());
+                                        .filter(d -> d.type == Door.Types.CONNECTING || d.type == Door.Types.INTERNAL)
+                                        .filter(d -> !d.isOpen(stock)).collect(Collectors.toUnmodifiableList());
 
         boolean intersects = false;
         Door<?> intersectingDoor = null;
@@ -740,7 +801,7 @@ public abstract class EntityRollingStockDefinition {
                 passengerOffset.subtract(searchRange, searchRange, searchRange),
                 passengerOffset.add(searchRange, searchRange, searchRange)
         );
-        List<OBJFace> nearby = new ArrayList<>();
+        List<Face> nearby = new ArrayList<>();
         navMesh.queryBVH(navMesh.root, rayBox, nearby, gauge.scale());
         if (nearby.isEmpty()) {
             return passengerOffset.rotateYaw(90);
@@ -752,7 +813,7 @@ public abstract class EntityRollingStockDefinition {
         Vec3d nearest = null;
         double nearestDistSq = Double.MAX_VALUE;
 
-        for (OBJFace face : nearby) {
+        for (Face face : nearby) {
             Vec3d p0 = face.vertex0.pos;
             Vec3d p1 = face.vertex1.pos;
             Vec3d p2 = face.vertex2.pos;
@@ -873,13 +934,13 @@ public abstract class EntityRollingStockDefinition {
                     .collect(Collectors.toList());
             data = new float[components.size() * xRes * zRes];
 
-            FaceAccessor visitor = def.model.getFaceAccessor();
+            FaceAccessor accessor = def.stockModel.model.getFaceAccessor();
 
             for (int i = 0; i < components.size(); i++) {
                 ModelComponent rc = components.get(i);
                 int idx = i * xRes * zRes;
                 for (String group : rc.modelIDs) {
-                    FaceAccessor grouped = visitor.getSubByGroup(group);
+                    FaceAccessor grouped = accessor.ofGroup(group);
 
                     for (FaceAccessor face : grouped) {
                         Path2D path = new Path2D.Float();
@@ -922,7 +983,7 @@ public abstract class EntityRollingStockDefinition {
     private Function<EntityBuildableRollingStock, float[][]> initHeightmap() {
         String key = String.format(
                 "%s-%s-%s-%s-%s-%s",
-                model.hash, frontBounds, rearBounds, widthBounds, heightBounds, renderComponents.size());
+                stockModel.model.hash, frontBounds, rearBounds, widthBounds, heightBounds, renderComponents.size());
         try {
             ResourceCache<HeightMapData> cache = new ResourceCache<>(
                     new Identifier(modelLoc.getDomain(), modelLoc.getPath() + "_heightmap_" + key.hashCode()),
@@ -1041,7 +1102,75 @@ public abstract class EntityRollingStockDefinition {
         return new StockModel<>(this);
     }
     public StockModel<?, ?> getModel() {
-        return this.model;
+        return this.stockModel; 
+    }
+
+    private Map<String, TextFieldConfig> parseTextFields(List<DataBlock> textFields) {
+        if (textFields == null) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, TextFieldConfig> list = new HashMap<>();
+
+        for (DataBlock textField : textFields) {
+            String groupName = textField.getValue("name").asString();
+            groupName = String.format("TEXTFIELD_%s", groupName);
+
+            DataBlock resolution = textField.getBlock("resolution");
+
+            DataBlock config = textField.getBlock("config");
+
+
+            String finalGroupName = groupName;
+            TextFieldConfig current = new TextFieldConfig(
+                    groupName,
+                    Optional.ofNullable(resolution.getValue("x").asInteger()).orElseGet(() -> {
+                        ModCore.warn("Text field %s doesn't have an x-resolution defined. Using default", finalGroupName);
+                        return 128;
+                    }),
+                    Optional.ofNullable(resolution.getValue("y").asInteger()).orElseGet(() -> {
+                        ModCore.warn("Text field %s doesn't have an y-resolution defined. Using default", finalGroupName);
+                        return 7;
+                    }),
+                    defaults -> {
+                        if (config == null) {
+                            return;
+                        }
+
+                        Optional.ofNullable(config.getValue("text").asString()).ifPresent(defaults::setText);
+                        Optional.ofNullable(config.getValue("color").asString()).ifPresent(c -> defaults.setColor(RGBA.fromHex(c)));
+                        Optional.ofNullable(config.getValue("fullbright").asBoolean()).ifPresent(defaults::setFullbright);
+                        Optional.ofNullable(config.getValue("gap").asInteger()).ifPresent(defaults::setGap);
+                        Optional.ofNullable(config.getValue("align").asString()).ifPresent(a -> defaults.setAlign(TextFieldConfig.Align.valueOf(a.toUpperCase())));
+                        Optional.ofNullable(config.getValue("font").asIdentifier()).ifPresent(defaults::setFont);
+                        Optional.ofNullable(config.getValues("linked")).ifPresent(l -> defaults.setLinked(l.stream().map(v -> String.format("TEXTFIELD_%s", v.asString())).collect(Collectors.toList())));
+                        Optional.ofNullable(config.getValue("global").asBoolean()).ifPresent(defaults::setGlobal);
+                        Optional.ofNullable(config.getValue("selectable").asBoolean()).ifPresent(defaults::setSelectable);
+
+                        Set<String> fonts = Optional.ofNullable(config.getValues("availableFonts")).orElse(Collections.emptyList()).stream().map(DataBlock.Value::asString).collect(Collectors.toSet());
+                        if (!fonts.isEmpty()) {
+                            List<Identifier> availableFonts = loadedFonts.stream()
+                                    .filter(identifier -> fonts.stream().anyMatch(f -> identifier.getPath().contains(f)))
+                                    .collect(Collectors.toList());
+                            defaults.setAvailableFonts(availableFonts);
+                        }
+
+                        List<String> filter = Optional.ofNullable(config.getValues("filter")).orElse(Collections.emptyList()).stream().map(DataBlock.Value::asString).collect(Collectors.toList());
+                        if (!filter.isEmpty()) {
+                            defaults.setFilter(filter);
+                        }
+
+                        Optional.ofNullable(config.getValue("unique").asBoolean()).ifPresent(defaults::setUnique);
+                        Optional.ofNullable(config.getValue("numberPlate").asBoolean()).ifPresent(defaults::setNumberPlate);
+                        Optional.ofNullable(config.getValue("verticalAlign").asString()).ifPresent(v -> defaults.setVerticalAlign(TextFieldConfig.VerticalAlign.valueOf(v)));
+                        Optional.ofNullable(config.getValue("scale").asFloat()).ifPresent(defaults::setScale);
+                    }
+            );
+
+            list.put(groupName, current);
+        }
+
+        return list;
     }
 
     private Map<String, TextFieldConfig> parseTextFields(List<DataBlock> textFields) {

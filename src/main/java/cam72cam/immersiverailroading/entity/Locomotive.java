@@ -522,7 +522,10 @@ public abstract class Locomotive extends FreightTank{
 			if (hornTime == 0) {
 				hornPull = 0;
 			}
-			OptionalDouble control = getDefinition().getModel().getControls(ModelComponentType.BELL_CONTROL_X).stream().mapToDouble(this::getControlPosition).max();
+			OptionalDouble control = this.getDefinition().getModel().getControls().stream()
+			                             .filter(x -> x.part.type == ModelComponentType.BELL_CONTROL_X)
+			                             .mapToDouble(this::getControlPosition)
+			                             .max();
 			if (control.isPresent() && control.getAsDouble() > 0) {
 				bellTime = 10;
 				bellControl = true;
@@ -787,8 +790,10 @@ public abstract class Locomotive extends FreightTank{
 		if (getHornPlayer() != null) {
 			return (getHornPlayer().getRotationPitch() + 90) / 180;
 		}
-		double control = getDefinition().getModel().getControls(ModelComponentType.WHISTLE_CONTROL_X).stream()
-		        .mapToDouble(this::getControlPosition).max().orElse(0);
+		double control = this.getDefinition().getModel().getControls().stream()
+		                     .filter(x -> x.part.type == ModelComponentType.WHISTLE_CONTROL_X)
+		                     .mapToDouble(this::getControlPosition)
+		                     .max().orElse(0);
 
 		return Math.max((float)control, hornPull);
 	}

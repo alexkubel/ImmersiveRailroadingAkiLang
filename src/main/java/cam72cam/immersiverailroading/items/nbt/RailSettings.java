@@ -1,7 +1,9 @@
 package cam72cam.immersiverailroading.items.nbt;
 
 import cam72cam.immersiverailroading.ImmersiveRailroading;
+import cam72cam.immersiverailroading.items.nbt.RailSettings.Mutable;
 import cam72cam.immersiverailroading.library.*;
+import cam72cam.immersiverailroading.util.TrackFaceTransSetting;
 import cam72cam.immersiverailroading.util.EndPointData;
 import cam72cam.immersiverailroading.util.RollAndOffsetInfo;
 import cam72cam.mod.item.ItemStack;
@@ -26,6 +28,7 @@ public class RailSettings {
     public final RollAndOffsetInfo pickRollAndOffsetInfo;
     public final TrackSmoothing smoothing;
     public final TrackDirection direction;
+    public final TrackFaceTransSetting trackFaceTransSetting;
     public final ItemStack railBed;
     public final ItemStack railBedFill;
     public final int railBedFillWidth;
@@ -53,12 +56,12 @@ public class RailSettings {
             isPreview, isGradeCrossing, count, spacing, 1, 4);
     } 
     public RailSettings(Gauge gauge, String track, TrackItems type, TrackItems pickType, int length, float degrees, float curvosity, TrackSmoothing smoothing, EndPointData nearPointData, EndPointData farPointData, RollAndOffsetInfo rollAndOffsetInfo, RollAndOffsetInfo pickRollAndOffsetInfo,
-        TrackDirection direction, ItemStack railBed, ItemStack railBedFill,
+        TrackDirection direction, TrackFaceTransSetting trackFaceTransSetting, ItemStack railBed, ItemStack railBedFill,
         boolean isPreview, boolean isGradeCrossing, 
         int transfertableEntryCount, int transfertableEntrySpacing, int parallelCount, float parallelGap) {
         this (
             gauge, track, type, pickType, length, degrees, curvosity, smoothing, nearPointData, farPointData, rollAndOffsetInfo, 
-            pickRollAndOffsetInfo, direction, railBed,railBedFill,
+            pickRollAndOffsetInfo, direction, trackFaceTransSetting, railBed,railBedFill,
             1, 
             ItemStack.EMPTY,
                     0, 
@@ -98,6 +101,7 @@ public class RailSettings {
             RollAndOffsetInfo rollAndOffsetInfo, 
             RollAndOffsetInfo pickRollAndOffsetInfo, 
             TrackDirection direction, 
+            TrackFaceTransSetting trackFaceTransSetting,
             ItemStack railBed, 
             ItemStack railBedFill, 
             int railBedFillWidth, 
@@ -126,6 +130,7 @@ public class RailSettings {
         this.rollAndOffsetInfo = rollAndOffsetInfo;
         this.pickRollAndOffsetInfo = pickRollAndOffsetInfo;
         this.direction = direction;
+        this.trackFaceTransSetting = trackFaceTransSetting;
         this.railBed = railBed;
         this.railBedFill = railBedFill;
         this.railBedFillWidth = railBedFillWidth;
@@ -263,6 +268,8 @@ public class RailSettings {
         public TrackSmoothing smoothing;
         @TagField("direction")
         public TrackDirection direction;
+        @TagField("trackFaceTransSetting")
+        public TrackFaceTransSetting trackFaceTransSetting;
         @TagField("bedItem")
         public ItemStack railBed;
         @TagField("bedFill")
@@ -321,11 +328,14 @@ public class RailSettings {
 
             this.type = settings.type;
             this.pickType = settings.pickType;
+
             this.length = settings.length;
             this.degrees = settings.degrees;
             this.curvosity = settings.curvosity;
             this.smoothing = settings.smoothing;
             this.direction = settings.direction;
+
+            this.trackFaceTransSetting = settings.trackFaceTransSetting;
             this.railBed = settings.railBed;
             this.railBedFill = settings.railBedFill;
             this.railBedFillWidth = settings.railBedFillWidth;
@@ -339,6 +349,7 @@ public class RailSettings {
             this.cuttingGradient = settings.cuttingGradient;
             this.isPreview = settings.isPreview;
             this.isGradeCrossing = settings.isGradeCrossing;
+
             this.transfertableEntryCount = settings.transfertableEntryCount;
             this.transfertableEntrySpacing = settings.transfertableEntrySpacing;
             this.parallelCount = settings.parallelCount;
@@ -359,8 +370,11 @@ public class RailSettings {
 
             length = 10;
             degrees = 90;
+            curvosity = 1;
             smoothing = TrackSmoothing.BOTH;
             direction = TrackDirection.NONE;
+
+            trackFaceTransSetting = new TrackFaceTransSetting();
             railBed = ItemStack.EMPTY;
             railBedFill = ItemStack.EMPTY;
             railBedFillWidth = 1;
@@ -374,7 +388,7 @@ public class RailSettings {
             cuttingGradient = 1;
             isPreview = false;
             isGradeCrossing = false;
-            curvosity = 1;
+
             transfertableEntryCount = 1;
             transfertableEntrySpacing = 1;
             parallelCount = 1;
@@ -398,6 +412,7 @@ public class RailSettings {
                     rollAndOffsetInfo,
                     pickRollAndOffsetInfo,
                     direction,
+                    trackFaceTransSetting,
                     railBed,
                     railBedFill,
                     railBedFillWidth,
@@ -458,6 +473,7 @@ public class RailSettings {
                     d -> {
                         TagCompound railData = d.get(fieldName);
                         NbtMigrators.migrateTrackAlignment(railData);
+                        NbtMigrators.migrateTrackType(railData);
                         try {
                             return new Mutable(d.get(fieldName)).immutable();
                         } catch (SerializationException e) {

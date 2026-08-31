@@ -11,12 +11,14 @@ import cam72cam.immersiverailroading.registry.DefinitionManager;
 import cam72cam.immersiverailroading.registry.TrackDefinition;
 import cam72cam.immersiverailroading.render.ExpireableMap;
 import cam72cam.immersiverailroading.track.*;
+import cam72cam.immersiverailroading.util.RailInfo.Mutable;
 import cam72cam.mod.serialization.*;
 import cam72cam.mod.entity.Player;
 import cam72cam.mod.item.ItemStack;
 import cam72cam.mod.math.Vec3i;
 import cam72cam.mod.world.World;
 
+import java.security.Permissions;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -68,6 +70,7 @@ public class RailInfo {
 				this.settings.curvosity,
 				this.settings.nearPointData,
 				this.settings.farPointData,
+				this.settings.trackFaceTransSetting,
 				this.settings.railBed,
 				this.settings.railBedFill,
 				this.settings.railBedFillWidth,
@@ -466,13 +469,14 @@ public class RailInfo {
 				new EndPointData(10), 
 				RollAndOffsetInfo.getDefault(), 
 				RollAndOffsetInfo.getDefault(), 
-				TrackDirection.NONE, railBed, 
+				TrackDirection.NONE, 
+				new TrackFaceTransSetting(),
+				railBed, 
 				cam72cam.mod.item.ItemStack.EMPTY, 
 				false, 
 				false, 
-				1,  1,
-				1,
-				1);
+				1, 1,
+				1, 1);
 			return new RailInfo(settings, placementInfo, null, switchState, switchForced, tablePos);
 		}
 	}

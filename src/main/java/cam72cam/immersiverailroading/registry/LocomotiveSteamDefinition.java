@@ -73,11 +73,13 @@ public class LocomotiveSteamDefinition extends LocomotiveDefinition {
         cab_forward = properties.getValue("cab_forward").asBoolean(false);
 
         DataBlock sounds = data.getBlock("sounds");
+        boolean hasCustom = sounds.getValue("file").asIdentifier() != null;
+
         whistle = SoundDefinition.getOrDefault(sounds, "whistle");
-        idle = SoundDefinition.getOrDefault(sounds, "idle");
-        chuff = sounds.getValue("chuff").asIdentifier();
-        pressure = sounds.getValue("pressure").asIdentifier();
-        cylinder_drain = sounds.getValue("cylinder_drain").asIdentifier();
+        idle = hasCustom ? null : SoundDefinition.getOrDefault(sounds, "idle");
+        chuff = hasCustom ? null :  sounds.getValue("chuff").asIdentifier();
+        pressure = hasCustom ? null : sounds.getValue("pressure").asIdentifier();
+        cylinder_drain = hasCustom ? null : sounds.getValue("cylinder_drain").asIdentifier();
         pistonDiameter = properties.getValue("piston_diameter").asDouble(0.6);
         pistonStroke = properties.getValue("piston_stroke").asDouble(0.66);
         wheelDiameter = properties.getValue("wheel_diameter").asDouble(1.4);
