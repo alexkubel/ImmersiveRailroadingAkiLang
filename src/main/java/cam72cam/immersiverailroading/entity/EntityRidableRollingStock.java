@@ -91,7 +91,7 @@ public abstract class EntityRidableRollingStock extends EntityBuildableRollingSt
 			int wiggle = 10;
 			off = off.add((Math.random()-0.5) * wiggle, 0, (Math.random()-0.5) * wiggle);
 		}
-		off = this.getDefinition().correctPassengerBounds(gauge, off, shouldRiderSit(passenger), true);
+		off = this.getDefinition().correctPassengerBounds(gauge, off, shouldRiderSit(passenger));
 
 		return off;
 	}
@@ -152,8 +152,7 @@ public abstract class EntityRidableRollingStock extends EntityBuildableRollingSt
 
         movement = new Vec3d(movement.x, 0, movement.z).rotateYaw(this.getRotationYaw() - source.getRotationYawHead());
 
-		Vec3d other = getDefinition().calculateCorrectedMovement(this, this.gauge, offset, movement);
-		offset = offset.add(other);
+		offset = offset.add(getDefinition().correctMovement(this, this.gauge, offset, movement));
 
         if (this instanceof EntityCoupleableRollingStock couplable) {
             boolean atFront = this.getDefinition().isAtFront(gauge, offset);
